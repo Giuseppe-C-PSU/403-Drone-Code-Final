@@ -4,6 +4,7 @@
 #include "../include/rc_pilot_reading.h"
 #include "../include/motors.h"
 #include "../include/rc_pilot.h"
+// #include "../include/controller.h"
 
 Motors motors;
 extern RC_PILOT rc;
@@ -14,7 +15,6 @@ uint16_t MotorDataGCS[4] = {MIN_PWM_OUT,MIN_PWM_OUT,MIN_PWM_OUT,MIN_PWM_OUT};
 
 void setup()
 {
-    // controller_setup();
 
     rc_setup();
 
@@ -44,10 +44,10 @@ void loop()
       // pwm[2] = rc.rc_in.THR;
       // pwm[3] = rc.rc_in.THR;
 
-      pwm[0] = 1200;
-      pwm[1] = 1200;
-      pwm[2] = 1200;
-      pwm[3] = 1200;
+      pwm[0] = 1050;
+      pwm[1] = 1050;
+      pwm[2] = 1050;
+      pwm[3] = 1050;
     }
     else{
       pwm[0] = 900;
