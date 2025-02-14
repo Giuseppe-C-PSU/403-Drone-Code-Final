@@ -1,15 +1,21 @@
 // #include "../include/controller.h"
 // #include "../include/rc_pilot.h"
+// #include "../include/sensors.h"
 
-// extern RC_PILOT rc
+// extern RC_PILOT rc;
+// extern Sensors sens;
 
-// void controller_setup(){
+// uint16_t KD[3] = {1,1,1};
 
-// }
+// // void controller_setup(){
+
+// // }
 
 // void controller_loop(){
-//     *c_delf  = throttleLever - delftrim;
-// 	*c_delm0 = rollStick     - KD[0] * nav_w_x;
-// 	*c_delm1 = PitchStick    - KD[1] * nav_w_y;
-// 	*c_delm2 = rudderPedal   - KD[2] * nav_w_z;
+//     int16_t c_delf  = rc.rc_in.THR;
+// 	int16_t c_delm0 = rc.rc_in.ROLL - KD[0] * sens.data.gyr[1];
+// 	int16_t c_delm1 = rc.rc_in.PITCH - KD[1] * sens.data.gyr[2];
+// 	int16_t c_delm2 = rc.rc_in.YAW - KD[2] * sens.data.gyr[3];
+
+
 // }

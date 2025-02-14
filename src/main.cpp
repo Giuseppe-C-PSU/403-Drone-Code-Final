@@ -4,6 +4,7 @@
 #include "../include/rc_pilot_reading.h"
 #include "../include/motors.h"
 #include "../include/rc_pilot.h"
+#include "../include/sensor_prelim.h"
 // #include "../include/controller.h"
 
 Motors motors;
@@ -18,7 +19,7 @@ void setup()
 
     rc_setup();
 
-    // pozyx_setup();
+    pozyx_setup();
 
     motors.init();
 
@@ -60,9 +61,9 @@ void loop()
 
     // controller_loop();
 
-    // Serial.print("Pozyx\n");
-    // pozyx_loop();
-    // Serial.print("\n");
+    Serial.print("Pozyx\n");
+    pozyx_loop();
+    Serial.print("\n");
     // delay(1000);
 
 
