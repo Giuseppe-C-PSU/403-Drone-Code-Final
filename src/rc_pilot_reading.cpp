@@ -33,10 +33,10 @@
 // #include "datalink.h"
 #include "rc_pilot_reading.h"
 
- RC_PILOT rc;
+  RC_PILOT rc;
 
-unsigned long previousMillis = 0;
-const long interval = 500;
+// unsigned long previousMillis = 0;
+// const long interval = 500;
 
 void rc_setup() {
 
@@ -59,11 +59,11 @@ void rc_reciever_loop() {
   
   rc.update();
   //rc.print();
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
-    rc.print(); // should be commented out for flight
-  }
+  // unsigned long currentMillis = millis();
+  // if (currentMillis - previousMillis >= interval) {
+  //   previousMillis = currentMillis;
+  //   rc.print(); // should be commented out for flight
+  // }
 
   //readDatalink( &Udp );
   //writeAutopilotDels( &Udp );

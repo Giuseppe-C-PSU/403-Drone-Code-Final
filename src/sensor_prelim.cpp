@@ -18,7 +18,7 @@ void pozyx_loop(){
     //delay(500);
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     sens.update();
-    sens.print(); // should be commented out for flight
+    // sens.print(); // should be commented out for flight
 }
 
 

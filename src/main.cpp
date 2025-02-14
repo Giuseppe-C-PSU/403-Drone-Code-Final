@@ -5,10 +5,14 @@
 #include "../include/motors.h"
 #include "../include/rc_pilot.h"
 #include "../include/sensor_prelim.h"
-// #include "../include/controller.h"
+#include "../include/controller.h"
 
 Motors motors;
 extern RC_PILOT rc;
+Controller cntrl;
+
+unsigned long previousMillis = 0;
+const long interval = 500;
 
 
 uint16_t pwm[4] = {MIN_PWM_OUT,MIN_PWM_OUT,MIN_PWM_OUT,MIN_PWM_OUT};
@@ -38,6 +42,8 @@ void loop()
     rc_reciever_loop();
     // delay(1000);
 
+    cntrl.controller_loop();
+
     if(rc.rc_in.AUX2 > 1500)
     {
       // pwm[0] = rc.rc_in.THR;
@@ -56,14 +62,23 @@ void loop()
       pwm[2] = 900;
       pwm[3] = 900;
     } 
+
+
     motors.update(pwm);
   
 
-    // controller_loop();
+    cntrl.controller_loop();
+    
 
-    Serial.print("Pozyx\n");
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= interval) {
+        previousMillis = currentMillis;
+        cntrl.print();
+    }
+
+    // Serial.print("Pozyx\n");
     pozyx_loop();
-    Serial.print("\n");
+    // Serial.print("\n");
     // delay(1000);
 
 
@@ -71,4 +86,6 @@ void loop()
     // thermal_loop();
     // Serial.print("\n");
     delay(10);
+
+    
 }
