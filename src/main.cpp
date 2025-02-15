@@ -42,8 +42,6 @@ void loop()
     rc_reciever_loop();
     // delay(1000);
 
-    cntrl.controller_loop();
-
     if(rc.rc_in.AUX2 > 1500)
     {
       // pwm[0] = rc.rc_in.THR;
@@ -51,10 +49,10 @@ void loop()
       // pwm[2] = rc.rc_in.THR;
       // pwm[3] = rc.rc_in.THR;
 
-      pwm[0] = 1050;
-      pwm[1] = 1050;
-      pwm[2] = 1050;
-      pwm[3] = 1050;
+      pwm[0] = cntrl.pwmout_3;
+      pwm[1] = cntrl.pwmout_0;
+      pwm[2] = cntrl.pwmout_2;
+      pwm[3] = cntrl.pwmout_1;
     }
     else{
       pwm[0] = 900;
@@ -63,11 +61,15 @@ void loop()
       pwm[3] = 900;
     } 
 
-
-    motors.update(pwm);
-  
+    // Serial.print("Pozyx\n");
+    pozyx_loop();
+    // Serial.print("\n");
+    // delay(1000);
 
     cntrl.controller_loop();
+
+    motors.update(pwm);
+
     
 
     unsigned long currentMillis = millis();
@@ -75,11 +77,6 @@ void loop()
         previousMillis = currentMillis;
         cntrl.print();
     }
-
-    // Serial.print("Pozyx\n");
-    pozyx_loop();
-    // Serial.print("\n");
-    // delay(1000);
 
 
     // Serial.print("Thermal Camera\n");
