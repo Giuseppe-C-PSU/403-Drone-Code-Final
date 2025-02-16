@@ -22,10 +22,10 @@ void Controller::controller_loop() {
     // c_delm1 = (rc.rc_in.PITCH - 1500) / 500.0 - KD[1] * sens.data.gyr[2];
     // c_delm2 = (rc.rc_in.YAW - 1500) / 500.0 - KD[2] * sens.data.gyr[3];
 
-    c_delf  = (rc.rc_in.THR - 1500) / 500.0 - KDI[0];
-    c_delm0 = (rc.rc_in.ROLL - 1500) / 500.0 - KDI[1];
-    c_delm1 = (rc.rc_in.PITCH - 1500) / 500.0 - KDI[2];
-    c_delm2 = (rc.rc_in.YAW - 1500) / 500.0 - KDI[3];
+    c_delf  = ((static_cast<int>(rc.rc_in.THR) + TC[0] - 1500) / 500.0 - KD[0]) + TRIM[0];
+    c_delm0 = ((static_cast<int>(rc.rc_in.ROLL) + TC[1] - 1500) / 500.0 - KD[1] * sens.data.gyr[1]) + TRIM[1];
+    c_delm1 = ((static_cast<int>(rc.rc_in.PITCH) + TC[2] - 1500) / 500.0 - KD[2] * sens.data.gyr[2]) + TRIM[2];
+    c_delm2 = ((static_cast<int>(rc.rc_in.YAW) + TC[3] - 1500) / 500.0 - KD[3] * sens.data.gyr[3]) + TRIM[3] ;
 
 
     // c_delf  = rc.rc_in.THR;

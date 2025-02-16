@@ -9,8 +9,12 @@
 
 class Controller{
 private:
-    // float KD[3] = {0.05,0.1,0.1};
-    float KDI[4] = {0,-0.01,-0.11,-0.04};
+    float KD[3] = {1,1,1};
+    // float KDI[4] = {0,-0.01,-0.11,-0.04}; This was a test doesn't really work
+    float TC[4] = {0,7,54,19}; // Get's rid of the controller biases (messy startup data)
+    float TRIM[4] = {0,0.1,0.1,0}; // Front Right, Back Right, Back Left, Front Left
+    //Trim for the actuall motors themselves (In order to get it to hover properly)
+    
     float c_delf;
 	float c_delm0;
 	float c_delm1;
