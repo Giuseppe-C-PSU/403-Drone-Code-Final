@@ -75,7 +75,8 @@ void loop()
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
-        cntrl.print();
+        // cntrl.print();
+        rc.print();
     }
 
 
