@@ -2,6 +2,8 @@
 #include "rc_pilot.h"
 #include "sensors.h"
 
+#define DEAD_BAND 0.05
+
 #define MIN_PWM 900
 #define MAX_PWM 1900
 #define LIMIT(x,xl,xu) ((x)>=(xu)?(xu):((x)<(xl)?(xl):(x)))
@@ -11,29 +13,78 @@ extern Sensors sens;
 
 
 
+
+float Controller::applyDeadband(float value, float deadband) {
+    if (fabs(value) < deadband) {
+        return 0.0;
+    }
+    return value;
+}
+
+float Controller::movingAverage(float newValue, float* buffer, int bufferSize) {
+    float sum = 0.0;
+    for (int i = bufferSize - 1; i > 0; i--) {
+        buffer[i] = buffer[i - 1];
+        sum += buffer[i];
+    }
+    buffer[0] = newValue;
+    sum += newValue;
+    return sum / bufferSize;
+}
+
+void Controller::controller_loop() {
+    static float thrBuffer[10] = {0};
+    static float rollBuffer[10] = {0};
+    static float pitchBuffer[10] = {0};
+    static float yawBuffer[10] = {0};
+
+    c_delf  = ( ( (rc.rc_in.THR) - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX/4.0) );
+    c_delm0 = ( ( (rc.rc_in.ROLL) - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX/4.0) );
+    c_delm1 = ( ( (rc.rc_in.PITCH) - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX/4.0) );
+    c_delm2 = ( ( (rc.rc_in.YAW) - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX/4.0) );
+
+    c_delf  = applyDeadband(movingAverage(c_delf, thrBuffer, 10), DEAD_BAND);
+    c_delm0 = applyDeadband(movingAverage(c_delm0, rollBuffer, 10), DEAD_BAND);
+    c_delm1 = applyDeadband(movingAverage(c_delm1, pitchBuffer, 10), DEAD_BAND);
+    c_delm2 = applyDeadband(movingAverage(c_delm2, yawBuffer, 10), DEAD_BAND);
+
+    mixer();
+}
+
+
 // void controller_setup(){
 
 // }
 
-void Controller::controller_loop() {
-    // Normalize the input values to [-1, 1]
-    // c_delf  = (rc.rc_in.THR - 1500) / 500.0 - delftrim;
-    // c_delm0 = (rc.rc_in.ROLL - 1500) / 500.0 - KD[0] * sens.data.gyr[1];
-    // c_delm1 = (rc.rc_in.PITCH - 1500) / 500.0 - KD[1] * sens.data.gyr[2];
-    // c_delm2 = (rc.rc_in.YAW - 1500) / 500.0 - KD[2] * sens.data.gyr[3];
+// void Controller::controller_loop() {
+//     // Normalize the input values to [-1, 1]
+//     // c_delf  = (rc.rc_in.THR - 1500) / 500.0;
+//     // c_delm0 = (rc.rc_in.ROLL - 1500) / 500.0;
+//     // c_delm1 = (rc.rc_in.PITCH - 1500) / 500.0;
+//     // c_delm2 = (rc.rc_in.YAW - 1500) / 500.0;
 
-    c_delf  = ((static_cast<int>(rc.rc_in.THR) + TC[0] - 1500) / 500.0 - KD[0]) + TRIM[0];
-    c_delm0 = ((static_cast<int>(rc.rc_in.ROLL) + TC[1] - 1500) / 500.0 - KD[1] * sens.data.gyr[1]) + TRIM[1];
-    c_delm1 = ((static_cast<int>(rc.rc_in.PITCH) + TC[2] - 1500) / 500.0 - KD[2] * sens.data.gyr[2]) + TRIM[2];
-    c_delm2 = ((static_cast<int>(rc.rc_in.YAW) + TC[3] - 1500) / 500.0 - KD[3] * sens.data.gyr[3]) + TRIM[3] ;
+//     // c_delf  = ((static_cast<int>(rc.rc_in.THR) + TC[0] - 1500) / 500.0 - KD[0]) + TRIM[0];
+//     // c_delm0 = ((static_cast<int>(rc.rc_in.ROLL) + TC[1] - 1500) / 500.0 - KD[1] * sens.data.gyr[1]) + TRIM[1];
+//     // c_delm1 = ((static_cast<int>(rc.rc_in.PITCH) + TC[2] - 1500) / 500.0 - KD[2] * sens.data.gyr[2]) + TRIM[2];
+//     // c_delm2 = ((static_cast<int>(rc.rc_in.YAW) + TC[3] - 1500) / 500.0 - KD[3] * sens.data.gyr[3]) + TRIM[3] ;
+
+//     // c_delf  = ((static_cast<int>(rc.rc_in.THR) + TC[0] - 1500) / 500.0) + TRIM[0];
+//     // c_delm0 = ((static_cast<int>(rc.rc_in.ROLL) + TC[1] - 1500) / 500.0) + TRIM[1];
+//     // c_delm1 = ((static_cast<int>(rc.rc_in.PITCH) + TC[2] - 1500) / 500.0) + TRIM[2];
+//     // c_delm2 = ((static_cast<int>(rc.rc_in.YAW) + TC[3] - 1500) / 500.0) + TRIM[3];
+
+//     c_delf  = ( ( (rc.rc_in.THR) - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX/4.0) );
+//     c_delm0 = ( ( (rc.rc_in.ROLL) - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX/4.0) );
+//     c_delm1 = ( ( (rc.rc_in.PITCH) - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX/4.0) );
+//     c_delm2 = ( ( (rc.rc_in.YAW) - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX/4.0) );
 
 
-    // c_delf  = rc.rc_in.THR;
-    // c_delm0 = rc.rc_in.ROLL - KD[0] * sens.data.gyr[1];
-    // c_delm1 = rc.rc_in.PITCH - KD[1] * sens.data.gyr[2];
-    // c_delm2 = rc.rc_in.YAW - KD[2] * sens.data.gyr[3];
-    mixer();
-}
+//     // c_delf  = rc.rc_in.THR;
+//     // c_delm0 = rc.rc_in.ROLL - KD[0] * sens.data.gyr[1];
+//     // c_delm1 = rc.rc_in.PITCH - KD[1] * sens.data.gyr[2];
+//     // c_delm2 = rc.rc_in.YAW - KD[2] * sens.data.gyr[3];
+//     mixer();
+// }
 
 void Controller::print(){
     Serial.print(rc.rc_in.THR);

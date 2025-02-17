@@ -98,24 +98,24 @@ RC_PILOT::RC_PILOT()
   this->rc_in.AUX2  = MIN_PWM_IN;
 
   // replace this with rc calibration data
-  this->rc_in.ROLL_MIN  = 1000;
-  this->rc_in.PITCH_MIN = 1000;
+  this->rc_in.ROLL_MIN  = 992;
+  this->rc_in.PITCH_MIN = 992;
   this->rc_in.THR_MIN   = 1000;
-  this->rc_in.YAW_MIN   = 1000;
+  this->rc_in.YAW_MIN   = 988;
   this->rc_in.AUX_MIN   = 1000;
   this->rc_in.AUX2_MIN  = 1000;
 
   this->rc_in.ROLL_MID  = 1500;
-  this->rc_in.PITCH_MID = 1500;
+  this->rc_in.PITCH_MID = 1446;
   this->rc_in.THR_MID   = 1500;
-  this->rc_in.YAW_MID   = 1500;
+  this->rc_in.YAW_MID   = 1486;
   this->rc_in.AUX_MID   = 1500;
   this->rc_in.AUX2_MID  = 1500;
 
-  this->rc_in.ROLL_MAX  = 2000;
-  this->rc_in.PITCH_MAX = 2000;
-  this->rc_in.THR_MAX   = 2000;
-  this->rc_in.YAW_MAX   = 2000;
+  this->rc_in.ROLL_MAX  = 1992;
+  this->rc_in.PITCH_MAX = 1992;
+  this->rc_in.THR_MAX   = 1992;
+  this->rc_in.YAW_MAX   = 1981;
   this->rc_in.AUX_MAX   = 2000;
   this->rc_in.AUX2_MAX  = 2000;
 }
