@@ -6,7 +6,7 @@
 class Controller {
 private:
     float KD[3] = {0.01, 0.01, 0.01};
-    float TRIM[4] = {0, 0.1, 0.1, 0}; // Front Right, Back Right, Back Left, Front Left
+    // float TRIM[4] = {0, 0, 0, 0}; // Front Right, Back Right, Back Left, Front Left
 
     float* c_delf;
     float* c_delm0;

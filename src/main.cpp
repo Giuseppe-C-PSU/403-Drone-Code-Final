@@ -23,7 +23,7 @@ void setup()
 
     rc_setup();
 
-    pozyx_setup();
+    // pozyx_setup();
 
     motors.init();
 
@@ -75,8 +75,8 @@ void loop()
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
-        // cntrl.print();
-        rc.print();
+        cntrl.print();
+        // rc.print();
     }
 
 
