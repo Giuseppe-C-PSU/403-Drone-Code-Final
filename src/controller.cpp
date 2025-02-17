@@ -41,9 +41,9 @@ void Controller::controller_loop() {
     }
 
     *c_delf  = ((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0));
-    *c_delm0 = ((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0));
-    *c_delm1 = ((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0));
-    *c_delm2 = ((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0));
+    *c_delm0 = ((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0)) + TRIM[0];
+    *c_delm1 = ((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0)) + TRIM[1];
+    *c_delm2 = ((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0)) + TRIM[2];
 
     *c_delf  = applyDeadband(movingAverage(*c_delf, thrBuffer, 10), DEAD_BAND);
     *c_delm0 = applyDeadband(movingAverage(*c_delm0, rollBuffer, 10), DEAD_BAND);

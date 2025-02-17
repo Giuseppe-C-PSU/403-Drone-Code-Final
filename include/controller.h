@@ -17,6 +17,7 @@ private:
     float rollBuffer[10] = {0};
     float pitchBuffer[10] = {0};
     float yawBuffer[10] = {0};
+    float TRIM[3] = {0,0,0};
 
     float applyDeadband(float value, float deadband);
     float movingAverage(float newValue, float* buffer, int bufferSize);
