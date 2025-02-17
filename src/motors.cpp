@@ -18,7 +18,7 @@
  * EndCopyright
  ***/
 
-#include "../include/motors.h"
+#include "motors.h"
 
 Motors::Motors()
 {

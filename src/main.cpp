@@ -1,11 +1,11 @@
 #include <Arduino.h>
 
 
-#include "../include/rc_pilot_reading.h"
-#include "../include/motors.h"
-#include "../include/rc_pilot.h"
-#include "../include/sensor_prelim.h"
-#include "../include/controller.h"
+#include "rc_pilot_reading.h"
+#include "motors.h"
+#include "rc_pilot.h"
+#include "sensor_prelim.h"
+#include "controller.h"
 
 Motors motors;
 extern RC_PILOT rc;

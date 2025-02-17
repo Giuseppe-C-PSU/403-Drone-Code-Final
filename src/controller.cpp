@@ -1,6 +1,6 @@
-#include "../include/controller.h"
-#include "../include/rc_pilot.h"
-#include "../include/sensors.h"
+#include "controller.h"
+#include "rc_pilot.h"
+#include "sensors.h"
 
 #define MIN_PWM 900
 #define MAX_PWM 1900
