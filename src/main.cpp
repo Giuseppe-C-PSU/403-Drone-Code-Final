@@ -23,7 +23,7 @@ void setup()
 
     rc_setup();
 
-    // pozyx_setup();
+    pozyx_setup();
 
     motors.init();
 
