@@ -5,7 +5,10 @@
 
 class Controller {
 private:
-    float KD[3] = {0.01, 0.01, 0.01};
+    float KD[3] = {0.005, 0.005, 0.005};
+    // float KP[3] = {0.015, 0.015, 0.015};
+    // float KD[3] = {0, 0, 0};
+    float KP[3] = {0, 0, 0};
     // float TRIM[4] = {0, 0, 0, 0}; // Front Right, Back Right, Back Left, Front Left
 
     float* c_delf;
@@ -20,7 +23,7 @@ private:
     float TRIM[3] = {0,0,0};
 
     float applyDeadband(float value, float deadband);
-    float movingAverage(float newValue, float* buffer, int bufferSize);
+    float cumulativeMovingAverage(float newValue, float* buffer, int bufferSize);
 
 public:
     float* thr_pwm;

@@ -4,8 +4,8 @@
 
 #define DEAD_BAND 0.05
 
-#define MIN_PWM 900
-#define MAX_PWM 1900
+#define MIN_PWM 1000
+#define MAX_PWM 2000
 #define LIMIT(x,xl,xu) ((x)>=(xu)?(xu):((x)<(xl)?(xl):(x)))
 
 extern RC_PILOT rc;
@@ -21,16 +21,12 @@ float Controller::applyDeadband(float value, float deadband) {
     return value;
 }
 
-float Controller::movingAverage(float newValue, float* buffer, int bufferSize) {
-    float sum = 0.0;
-    for (int i = bufferSize - 1; i > 0; i--) {
-        buffer[i] = buffer[i - 1];
-        sum += buffer[i];
-    }
-    buffer[0] = newValue;
-    sum += newValue;
-    return sum / bufferSize;
+float Controller::cumulativeMovingAverage(float newValue, float* average, int count) {
+    *average = ((*average) * count + newValue) / (count + 1);
+    return *average;
 }
+
+
 
 void Controller::controller_loop() {
     if (c_delf == nullptr) {
@@ -40,15 +36,28 @@ void Controller::controller_loop() {
         c_delm2 = new float;
     }
 
-    *c_delf  = ((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0));
-    *c_delm0 = ((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0) - KD[0] * sens.data.gyr[0]) + TRIM[0];
-    *c_delm1 = ((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0) + KD[1] * sens.data.gyr[1]) + TRIM[1];
-    *c_delm2 = ((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0) - KD[2] * sens.data.gyr[2]) + TRIM[2];
+    
+    // *c_delm0 = ((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0) - KD[0] * sens.data.gyr[0]) + TRIM[0];
+    // *c_delm1 = ((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0) + KD[1] * sens.data.gyr[1]) + TRIM[1];
+    *c_delf  = ( applyDeadband((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0), DEAD_BAND) );
+    *c_delm2 = ( applyDeadband((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0), DEAD_BAND) * 1 - KD[2] * sens.data.gyr[2]) + TRIM[2];
+    *c_delm0 = ( applyDeadband((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0), DEAD_BAND ) * 1 - sens.data.euler[0] * KP[0] ) - KD[0] * sens.data.gyr[0];
+	*c_delm1 = ( applyDeadband((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0), DEAD_BAND ) * 1 + sens.data.euler[1] * KP[1] ) + KD[1] * sens.data.gyr[1];
 
-    *c_delf  = applyDeadband(movingAverage(*c_delf, thrBuffer, 10), DEAD_BAND);
-    *c_delm0 = applyDeadband(movingAverage(*c_delm0, rollBuffer, 10), DEAD_BAND);
-    *c_delm1 = applyDeadband(movingAverage(*c_delm1, pitchBuffer, 10), DEAD_BAND);
-    *c_delm2 = applyDeadband(movingAverage(*c_delm2, yawBuffer, 10), DEAD_BAND);
+    // *c_delf  = ((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0) );
+    // *c_delm2 = ((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0) * 0.75 - KD[2] * sens.data.gyr[2]) + TRIM[2];
+    // *c_delm0 = ( ( (rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0) ) * 0.75 - sens.data.euler[0] * KP[0] ) - KD[0] * sens.data.gyr[0];
+	// *c_delm1 = ( ( (rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0) ) * 0.75 + sens.data.euler[1] * KP[1] ) + KD[1] * sens.data.gyr[1];
+
+    // *c_delf  = applyDeadband(cumulativeMovingAverage(*c_delf, thrBuffer, 5), DEAD_BAND);
+    // *c_delm0 = applyDeadband(cumulativeMovingAverage(*c_delm0, rollBuffer, 5), DEAD_BAND);
+    // *c_delm1 = applyDeadband(cumulativeMovingAverage(*c_delm1, pitchBuffer, 5), DEAD_BAND);
+    // *c_delm2 = applyDeadband(cumulativeMovingAverage(*c_delm2, yawBuffer, 5), DEAD_BAND);
+
+    // *c_delf  = applyDeadband(*c_delf, DEAD_BAND);
+    // *c_delm0 = applyDeadband(*c_delm0, DEAD_BAND);
+    // *c_delm1 = applyDeadband(*c_delm1, DEAD_BAND);
+    // *c_delm2 = applyDeadband(*c_delm2, DEAD_BAND);
 
     mixer();
 }
@@ -146,10 +155,10 @@ void Controller::mixer(){
 		// float pitch_pwm = c_delm1;
 		// float yaw_pwm = c_delm2;
 
-		pwmout_0 = ( unsigned short ) LIMIT( *thr_pwm - *roll_pwm - *pitch_pwm + *yaw_pwm, MIN_PWM, MAX_PWM ) - 100; // front-right CW
-		pwmout_1 = ( unsigned short ) LIMIT( *thr_pwm - *roll_pwm + *pitch_pwm - *yaw_pwm, MIN_PWM, MAX_PWM ) - 100; // back-right  CCW
-		pwmout_2 = ( unsigned short ) LIMIT( *thr_pwm + *roll_pwm + *pitch_pwm + *yaw_pwm, MIN_PWM, MAX_PWM ) - 100; // back-left   CW
-		pwmout_3 = ( unsigned short ) LIMIT( *thr_pwm + *roll_pwm - *pitch_pwm - *yaw_pwm, MIN_PWM, MAX_PWM ) - 100; // front-left CCW
+		pwmout_0 = ( unsigned short ) LIMIT( *thr_pwm - *roll_pwm - *pitch_pwm - *yaw_pwm, MIN_PWM, MAX_PWM ); // front-right CW
+		pwmout_1 = ( unsigned short ) LIMIT( *thr_pwm - *roll_pwm + *pitch_pwm + *yaw_pwm, MIN_PWM, MAX_PWM ); // back-right  CCW
+		pwmout_2 = ( unsigned short ) LIMIT( *thr_pwm + *roll_pwm + *pitch_pwm - *yaw_pwm, MIN_PWM, MAX_PWM ); // back-left   CW
+		pwmout_3 = ( unsigned short ) LIMIT( *thr_pwm + *roll_pwm - *pitch_pwm + *yaw_pwm, MIN_PWM, MAX_PWM ); // front-left CCW
 
 
 }

@@ -28,9 +28,9 @@
   - Aux2     -> Pin 1
 */
 
-// #include "wifi.h"
+#include "wifi.h"
 #include "rc_pilot.h"
-// #include "datalink.h"
+#include "datalink.h"
 #include "rc_pilot_reading.h"
 
   RC_PILOT rc;
@@ -41,16 +41,13 @@
 void rc_setup() {
 
   // initialize wifi
-  //WifiSetup();
+  // WifiSetup();
+  // Serial.print("Wifi setup complete");
 
   // initialize rc
   rc.init();
+  // Serial.print("Rc setup complete");
 
-  // initialize peripherals 
-  Serial.begin(115200);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
   pinMode(LED_BUILTIN, OUTPUT);
 }
 
@@ -65,7 +62,7 @@ void rc_reciever_loop() {
   //   rc.print(); // should be commented out for flight
   // }
 
-  //readDatalink( &Udp );
-  //writeAutopilotDels( &Udp );
-  //writeRcChannels( &Udp , &rc );
+  // readDatalink( &Udp );
+  // writeAutopilotDels( &Udp );
+  // writeRcChannels( &Udp , &rc );
 }

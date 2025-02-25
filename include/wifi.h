@@ -18,28 +18,27 @@
  * EndCopyright
  ***/
 
-#ifndef AERSP_MOTORS_H
-#define AERSP_MOTORS_H
+#ifndef AERSP_WIFI
+#define AERSP_WIFI
 
-#include "pwm.h"
+#include <WiFiS3.h>
+#include <Arduino.h>
 
-#define NUM_MOTORS 4
-#define MIN_PWM_OUT 1000
-#define MAX_PWM_OUT 2000
+#define BUFFERSIZE 1024
 
-class Motors
-{
-public:
-  Motors();
-  ~Motors();
+extern char ssid[];    // your network SSID (name)
+extern char pass[];    // your network password (use for WPA, or use as key for WEP)
 
-  void init();
-  void calibrate();
-  void stop();
-  void update(uint16_t[NUM_MOTORS]);
+extern int status;
+extern int keyIndex;             // your network key index number (needed only for WEP)
 
-private:
-  PwmOut motor[4] = {PwmOut(3), PwmOut(5), PwmOut(9), PwmOut(10)};
-};
+extern unsigned int localPort;      // local port to listen on
+
+extern unsigned char buffer[BUFFERSIZE]; //buffer to hold incoming packet
+
+extern WiFiUDP Udp;
+
+void printWifiStatus();
+void WifiSetup();
 
 #endif

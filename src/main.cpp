@@ -7,6 +7,7 @@
 #include "sensor_prelim.h"
 #include "controller.h"
 
+
 Motors motors;
 extern RC_PILOT rc;
 Controller cntrl;
@@ -20,7 +21,13 @@ uint16_t MotorDataGCS[4] = {MIN_PWM_OUT,MIN_PWM_OUT,MIN_PWM_OUT,MIN_PWM_OUT};
 
 void setup()
 {
+  // initialize peripherals 
+  Serial.begin(115200);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
 
+  Serial.print("Setup has started");
     rc_setup();
 
     pozyx_setup();
@@ -63,20 +70,21 @@ void loop()
 
     // Serial.print("Pozyx\n");
     pozyx_loop();
-    // Serial.print("\n");
-    // delay(1000);
+    // // Serial.print("\n");
+    // // delay(1000);
 
     cntrl.controller_loop();
 
     motors.update(pwm);
 
-    
+    // cntrl.print();
 
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
         cntrl.print();
         // rc.print();
+        //sens.print();
     }
 
 
