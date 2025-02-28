@@ -33,7 +33,7 @@
 #define GRAVITY 9.81
 
 #define NUM_CALIBRATION 500
-#define LOWPASS_WEIGHT 0.9
+#define LOWPASS_WEIGHT 0.7
 
 struct sens_t
 {

@@ -143,12 +143,12 @@ void Sensors::print()
  // */
   
  // /*
-  Serial.print(this->data.acc[0]); // x acc 
-  Serial.print(",");
-  Serial.print(this->data.acc[1]); // y acc
-  Serial.print(",");
-  Serial.print(this->data.acc[2]); // z acc
-  Serial.print(",");
+  // Serial.print(this->data.acc[0]); // x acc 
+  // Serial.print(",");
+  // Serial.print(this->data.acc[1]); // y acc
+  // Serial.print(",");
+  // Serial.print(this->data.acc[2]); // z acc
+  // Serial.print(",");
  // */
 
 //  Serial.print(this->data.mag[0]);

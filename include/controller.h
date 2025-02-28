@@ -5,10 +5,10 @@
 
 class Controller {
 private:
-    float KD[3] = {0.005, 0.005, 0.005};
-    // float KP[3] = {0.015, 0.015, 0.015};
-    // float KD[3] = {0, 0, 0};
-    float KP[3] = {0, 0, 0};
+    float KD[3] = {0.1, 0.1, 0.1};
+    float KP[3] = {0.13, 0.13, 0.13};
+    // float KD[3] = {3, 3, 3};
+    // float KP[3] = {5, 5, 5};
     // float TRIM[4] = {0, 0, 0, 0}; // Front Right, Back Right, Back Left, Front Left
 
     float* c_delf;

@@ -8,6 +8,8 @@
 #define MAX_PWM 2000
 #define LIMIT(x,xl,xu) ((x)>=(xu)?(xu):((x)<(xl)?(xl):(x)))
 
+const float DEG2RAD_TERM = 3.1415926535897932384626433832795028841/180;
+
 extern RC_PILOT rc;
 extern Sensors sens;
 
@@ -36,76 +38,26 @@ void Controller::controller_loop() {
         c_delm2 = new float;
     }
 
+
     
-    // *c_delm0 = ((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0) - KD[0] * sens.data.gyr[0]) + TRIM[0];
-    // *c_delm1 = ((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0) + KD[1] * sens.data.gyr[1]) + TRIM[1];
     *c_delf  = ( applyDeadband((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0), DEAD_BAND) );
-    *c_delm2 = ( applyDeadband((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0), DEAD_BAND) * 1 - KD[2] * sens.data.gyr[2]) + TRIM[2];
-    *c_delm0 = ( applyDeadband((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0), DEAD_BAND ) * 1 - sens.data.euler[0] * KP[0] ) - KD[0] * sens.data.gyr[0];
-	*c_delm1 = ( applyDeadband((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0), DEAD_BAND ) * 1 + sens.data.euler[1] * KP[1] ) + KD[1] * sens.data.gyr[1];
-
-    // *c_delf  = ((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0) );
-    // *c_delm2 = ((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0) * 0.75 - KD[2] * sens.data.gyr[2]) + TRIM[2];
-    // *c_delm0 = ( ( (rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0) ) * 0.75 - sens.data.euler[0] * KP[0] ) - KD[0] * sens.data.gyr[0];
-	// *c_delm1 = ( ( (rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0) ) * 0.75 + sens.data.euler[1] * KP[1] ) + KD[1] * sens.data.gyr[1];
-
-    // *c_delf  = applyDeadband(cumulativeMovingAverage(*c_delf, thrBuffer, 5), DEAD_BAND);
-    // *c_delm0 = applyDeadband(cumulativeMovingAverage(*c_delm0, rollBuffer, 5), DEAD_BAND);
-    // *c_delm1 = applyDeadband(cumulativeMovingAverage(*c_delm1, pitchBuffer, 5), DEAD_BAND);
-    // *c_delm2 = applyDeadband(cumulativeMovingAverage(*c_delm2, yawBuffer, 5), DEAD_BAND);
-
-    // *c_delf  = applyDeadband(*c_delf, DEAD_BAND);
-    // *c_delm0 = applyDeadband(*c_delm0, DEAD_BAND);
-    // *c_delm1 = applyDeadband(*c_delm1, DEAD_BAND);
-    // *c_delm2 = applyDeadband(*c_delm2, DEAD_BAND);
+    *c_delm2 = ( applyDeadband((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0), DEAD_BAND) * 0.2 - KD[2] * ( sens.data.gyr[2] * DEG2RAD_TERM) );
+    *c_delm0 = ( applyDeadband((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0), DEAD_BAND ) * 0.2 - ( sens.data.euler[0] * DEG2RAD_TERM ) * KP[0] ) - KD[0] * ( sens.data.gyr[0] * DEG2RAD_TERM );
+	*c_delm1 = ( applyDeadband((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0), DEAD_BAND ) * 0.2 + ( sens.data.euler[1] * DEG2RAD_TERM ) * KP[1] ) + KD[1] * ( sens.data.gyr[1] * DEG2RAD_TERM );
 
     mixer();
 }
 
 
-// void controller_setup(){
-
-// }
-
-// void Controller::controller_loop() {
-//     // Normalize the input values to [-1, 1]
-//     // c_delf  = (rc.rc_in.THR - 1500) / 500.0;
-//     // c_delm0 = (rc.rc_in.ROLL - 1500) / 500.0;
-//     // c_delm1 = (rc.rc_in.PITCH - 1500) / 500.0;
-//     // c_delm2 = (rc.rc_in.YAW - 1500) / 500.0;
-
-//     // c_delf  = ((static_cast<int>(rc.rc_in.THR) + TC[0] - 1500) / 500.0 - KD[0]) + TRIM[0];
-//     // c_delm0 = ((static_cast<int>(rc.rc_in.ROLL) + TC[1] - 1500) / 500.0 - KD[1] * sens.data.gyr[1]) + TRIM[1];
-//     // c_delm1 = ((static_cast<int>(rc.rc_in.PITCH) + TC[2] - 1500) / 500.0 - KD[2] * sens.data.gyr[2]) + TRIM[2];
-//     // c_delm2 = ((static_cast<int>(rc.rc_in.YAW) + TC[3] - 1500) / 500.0 - KD[3] * sens.data.gyr[3]) + TRIM[3] ;
-
-//     // c_delf  = ((static_cast<int>(rc.rc_in.THR) + TC[0] - 1500) / 500.0) + TRIM[0];
-//     // c_delm0 = ((static_cast<int>(rc.rc_in.ROLL) + TC[1] - 1500) / 500.0) + TRIM[1];
-//     // c_delm1 = ((static_cast<int>(rc.rc_in.PITCH) + TC[2] - 1500) / 500.0) + TRIM[2];
-//     // c_delm2 = ((static_cast<int>(rc.rc_in.YAW) + TC[3] - 1500) / 500.0) + TRIM[3];
-
-//     c_delf  = ( ( (rc.rc_in.THR) - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX/4.0) );
-//     c_delm0 = ( ( (rc.rc_in.ROLL) - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX/4.0) );
-//     c_delm1 = ( ( (rc.rc_in.PITCH) - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX/4.0) );
-//     c_delm2 = ( ( (rc.rc_in.YAW) - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX/4.0) );
-
-
-//     // c_delf  = rc.rc_in.THR;
-//     // c_delm0 = rc.rc_in.ROLL - KD[0] * sens.data.gyr[1];
-//     // c_delm1 = rc.rc_in.PITCH - KD[1] * sens.data.gyr[2];
-//     // c_delm2 = rc.rc_in.YAW - KD[2] * sens.data.gyr[3];
-//     mixer();
-// }
-
 void Controller::print(){
-    Serial.print(rc.rc_in.THR);
-    Serial.print(", ");
-    Serial.print(rc.rc_in.ROLL);
-    Serial.print(", ");
-    Serial.print(rc.rc_in.PITCH);
-    Serial.print(", ");
-    Serial.print(rc.rc_in.YAW); 
-    Serial.print("\n");
+    // Serial.print(rc.rc_in.THR);
+    // Serial.print(", ");
+    // Serial.print(rc.rc_in.ROLL);
+    // Serial.print(", ");
+    // Serial.print(rc.rc_in.PITCH);
+    // Serial.print(", ");
+    // Serial.print(rc.rc_in.YAW); 
+    // Serial.print("\n");
 
     Serial.print(*c_delf);
     Serial.print(", ");
@@ -114,25 +66,25 @@ void Controller::print(){
     Serial.print(*c_delm1);
     Serial.print(", ");
     Serial.print(*c_delm2); 
-    Serial.print("\n");
+    Serial.println();
 
-    Serial.print(*thr_pwm);
-    Serial.print(", ");
-    Serial.print(*roll_pwm);
-    Serial.print(", ");
-    Serial.print(*pitch_pwm);
-    Serial.print(", ");
-    Serial.print(*yaw_pwm); 
-    Serial.print("\n");
+    // Serial.print(*thr_pwm);
+    // Serial.print(", ");
+    // Serial.print(*roll_pwm);
+    // Serial.print(", ");
+    // Serial.print(*pitch_pwm);
+    // Serial.print(", ");
+    // Serial.print(*yaw_pwm); 
+    // Serial.print("\n");
 
-    Serial.print(pwmout_0);
-    Serial.print(", ");
-    Serial.print(pwmout_1);
-    Serial.print(", ");
-    Serial.print(pwmout_2);
-    Serial.print(", ");
-    Serial.print(pwmout_3);
-    Serial.print("\n");
+    // Serial.print(pwmout_0);
+    // Serial.print(", ");
+    // Serial.print(pwmout_1);
+    // Serial.print(", ");
+    // Serial.print(pwmout_2);
+    // Serial.print(", ");
+    // Serial.print(pwmout_3);
+    // Serial.print("\n");
 
 }
 
