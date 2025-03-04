@@ -15,6 +15,7 @@
 #define HAVE_RC_RECEIVER 1
 #define HAVE_MOTORS      1
 #define HAVE_THERMAL     0
+#define HAVE_PRINTS      0
 
 const unsigned long intervalIMU = 10;
 const unsigned long intervalRC = 100;
@@ -48,19 +49,27 @@ void setup()
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-
   Serial.print("Setup has started");
-    rc_setup();
+  
+    #if HAVE_RC_RECIEVER
+      rc_setup();
+    #endif
 
-    pozyx_setup();
+    #if HAVE_IMU
+      pozyx_setup();
+    #endif
 
-    motors.init();
+    #if HAVE_MOTORS
+      motors.init();
+    #endif
 
     #if HAVE_DATALINK
     datalink.init();
     #endif
 
-    // thermal_setup();
+    #if HAVE_THERMAL
+      thermal_setup();
+    #endif
 
     pinMode(LED_BUILTIN, OUTPUT);
 
@@ -77,43 +86,35 @@ void loop()
   4-) Update data on GCS
   */
  // sensor-> rc->thermal->->motors
+
   unsigned long currentMillis = millis();
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 
   #if HAVE_IMU
   if (currentMillis - previousMillisIMU >= intervalIMU) {
-        previousMillisIMU = currentMillis;
-        //Serial.print("Pozyx: ");
-          pozyx_loop(); 
+    previousMillisIMU = currentMillis;
+    pozyx_loop(); 
   }
   #endif 
 
   #if HAVE_RC_RECEIVER
   if (currentMillis - previousMillisRC >= intervalRC) {
-      previousMillisRC = currentMillis;
-      //rc_reciever_loop();
-      rc.update();
+    previousMillisRC = currentMillis;
+    rc.update();
 
-      if(rc.rc_in.AUX2 > 1500)
-      {
-        // pwm[0] = rc.rc_in.THR;
-        // pwm[1] = rc.rc_in.THR;
-        // pwm[2] = rc.rc_in.THR;
-        // pwm[3] = rc.rc_in.THR;
-
-        pwm[0] = cntrl.pwmout_3;
-        pwm[1] = cntrl.pwmout_0;
-        pwm[2] = cntrl.pwmout_2;
-        pwm[3] = cntrl.pwmout_1;
-      }
-      else{
-        pwm[0] = 900;
-        pwm[1] = 900;
-        pwm[2] = 900;
-        pwm[3] = 900;
-      } 
-
-      // rc.print();
+    if(rc.rc_in.AUX2 > 1500)
+    {
+      pwm[0] = cntrl.pwmout_3;
+      pwm[1] = cntrl.pwmout_0;
+      pwm[2] = cntrl.pwmout_2;
+      pwm[3] = cntrl.pwmout_1;
+    }
+    else{
+      pwm[0] = 900;
+      pwm[1] = 900;
+      pwm[2] = 900;
+      pwm[3] = 900;
+    } 
   }
   #endif
 
@@ -124,8 +125,6 @@ void loop()
   writeUP0(&ether.UdpGCS,&rc);
   writeMotors(&ether.UdpGCS, &cntrl);
   writeAutopilotDels(&ether.UdpGCS, &cntrl);
-
-  
   #endif
 
   #if HAVE_MOTORS
@@ -133,10 +132,18 @@ void loop()
     previousMillisMotors = currentMillis;
     
     cntrl.controller_loop();
-    // cntrl.print();
-
     motors.update(pwm);
   }
+  #endif
+
+  #if HAVE_THERMAL
+    thermal_loop();
+  #endif
+  
+  #if HAVE_PRINTS
+    // rc.print();
+    cntrl.print();
+    // sens.print();
   #endif
   
 
