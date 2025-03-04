@@ -385,11 +385,18 @@ void Dlink::send_update(){
     writeUP0( &ether.UdpGCS, &rc );
   }
 
+  // currentMillis = millis();
+  // if (currentMillis - this->previousMillisPWM >= this->intervalPWM) {
+  //   this->previousMillisPWM = currentMillis;
+  //   writePWM( &ether.UdpGCS );
+  // }
+
   currentMillis = millis();
-  if (currentMillis - this->previousMillisPWM >= this->intervalPWM) {
-    this->previousMillisPWM = currentMillis;
-    writePWM( &ether.UdpGCS );
+  if (currentMillis - this->previousMillisMotorCmd >= this->intervalMotorCmd) {
+    this->previousMillisMotorCmd = currentMillis;
+    writeMotors(&ether.UdpGCS, &cntrl);
   }
+
 
   currentMillis = millis();
   if (currentMillis - this->previousMillisSim2Onboard >= this->intervalSim2Onboard) {

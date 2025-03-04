@@ -49,6 +49,7 @@
 #define DATALINK_INTERVALHITL_SIM2ONBOARD 100
 #define DATALINK_INTERVALHITL_ONBOARD2SIM 100
 #define DATALINK_INTERVALOPTITRACK 10
+#define DATALINK_MOTOR_CMD 100
 
 
 struct obDatalink_ref
@@ -344,6 +345,7 @@ private:
   long intervalSim2Onboard;
   long intervalOnboard2Sim;
   long intervalOptitrack;
+  long intervalMotorCmd;
   unsigned long previousMillisUp0;
   unsigned long previousMillisPWM;
   unsigned long previousMillisAutopilotDels;
@@ -351,6 +353,7 @@ private:
   unsigned long previousMillisSim2Onboard;
   unsigned long previousMillisOnboard2Sim;
   unsigned long previousMillisOptitrack;
+  unsigned long previousMillisMotorCmd;
 };
 
 uint32_t datalinkCheckSumCompute(unsigned char* buf, int32_t byteCount);

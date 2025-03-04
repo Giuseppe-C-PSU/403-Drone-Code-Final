@@ -120,11 +120,8 @@ void loop()
 
   #if HAVE_DATALINK
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-  readDatalink( &ether.UdpGCS );
-  readDatalink( &ether.UdpGPS );
-  writeUP0(&ether.UdpGCS,&rc);
-  writeMotors(&ether.UdpGCS, &cntrl);
-  writeAutopilotDels(&ether.UdpGCS, &cntrl);
+  datalink.recv_update();
+  datalink.send_update();
   #endif
 
   #if HAVE_MOTORS
@@ -139,7 +136,7 @@ void loop()
   #if HAVE_THERMAL
     thermal_loop();
   #endif
-  
+
   #if HAVE_PRINTS
     // rc.print();
     cntrl.print();
