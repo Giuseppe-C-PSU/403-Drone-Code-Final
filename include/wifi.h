@@ -12,8 +12,8 @@
  * http://purl.psu.edu
  *
  * Contact Information:
- * Dr. Thanakorn Khamvilai
- * Email : thanakorn.khamvilai@psu.edu
+ * Dr. Thanakorn Khamvilai (thanakorn.khamvilai@ttu.edu)
+ * Dr. Vitor T. Valente (vitor.valente@psu.edu)
  *
  * EndCopyright
  ***/
@@ -26,19 +26,25 @@
 
 #define BUFFERSIZE 1024
 
-extern char ssid[];    // your network SSID (name)
-extern char pass[];    // your network password (use for WPA, or use as key for WEP)
+class wifi
+{
+public:
+    wifi();
+    ~wifi();
 
-extern int status;
-extern int keyIndex;             // your network key index number (needed only for WEP)
+    unsigned char buffer[BUFFERSIZE];
+    WiFiUDP UdpGCS; /* local port to listen to GCS */
+    WiFiUDP UdpGPS; /* local port to listen to GPS/Optitrack */
 
-extern unsigned int localPort;      // local port to listen on
-
-extern unsigned char buffer[BUFFERSIZE]; //buffer to hold incoming packet
-
-extern WiFiUDP Udp;
-
-void printWifiStatus();
-void WifiSetup();
+    void init();
+    void print_status();
+private:
+    char *ssid; // your network SSID (name)
+    char *pass; // your network password (use for WPA, or use as key for WEP)
+    int status;
+    int keyIndex;
+    unsigned int localPortGPS;
+    unsigned int localPortGCS;
+};
 
 #endif

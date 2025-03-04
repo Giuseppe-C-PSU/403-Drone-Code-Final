@@ -12,19 +12,20 @@
  * http://purl.psu.edu
  *
  * Contact Information:
- * Dr. Thanakorn Khamvilai Email: thanakorn.khamvilai@ttu.edu
- * Dr. Vitor Valente       Email: vitor.valente@psu.edu
+ * Dr. Thanakorn Khamvilai (thanakorn.khamvilai@ttu.edu)
+ * Dr. Vitor T. Valente (vitor.valente@psu.edu)
  *
  * EndCopyright
  ***/
 
-#ifndef AERSP_DATALINK_h
-#define AERSP_DATALINK_h
+#ifndef AERSP_DLINK_H
+#define AERSP_DLINK_H
 
 #include <stdint.h>
 #include <stdlib.h>
 #include "wifi.h"
 #include "rc_pilot.h"
+#include "controller.h"
 
 #define DATALINK_SYNC0 0xa3
 #define DATALINK_SYNC1 0xb2
@@ -33,8 +34,22 @@
 #define DATALINK_MESSAGE0 0
 #define DATALINK_MESSAGE1 1
 #define DATALINK_MESSAGE_UP0 12
+#define DATALINK_MESSAGE_MOTOR_CMD 201
+#define DATALINK_MESSAGE_PWM 56
 #define DATALINK_MESSAGE_AUTOPILOTDELS 173
-#define DATALINK_MESSAGE_RCCHANNEL 200
+#define DATALINK_MESSAGE_TRUTH 221
+#define DATALINK_MESSAGE_HITL_SIM2ONBOARD 222
+#define DATALINK_MESSAGE_HITL_ONBOARD2SIM 223
+#define DATALINK_MESSAGE_OPTITRACK 230
+
+#define DATALINK_INTERVALUP0 100
+#define DATALINK_INTERVALPWM 100
+#define DATALINK_INTERVALAUTOPILOTDELS 100
+#define DATALINK_INTERVALTRUTH 100
+#define DATALINK_INTERVALHITL_SIM2ONBOARD 100
+#define DATALINK_INTERVALHITL_ONBOARD2SIM 100
+#define DATALINK_INTERVALOPTITRACK 10
+
 
 struct obDatalink_ref
 {
@@ -42,20 +57,23 @@ struct obDatalink_ref
 	struct datalinkHeader_ref               *header;        /* raw message header   */
   struct datalinkMessage0_ref             *m0;            /* raw message sent     */
   struct datalinkMessage1_ref             *m1;            /* raw message sent     */
-  struct datalinkMessageUp0_ref           *up0;           /* raw message received */
-  struct datalinkMessageRCChannel_ref     *rc;            /* raw message send     */
+  struct datalinkMessageUp0_ref           *up0;           /* raw message sent     */
+  struct datalinkMessagePWM_ref           *pwm;           /* raw message sent     */
   struct datalinkMessageAutopilotDels_ref *autopilotDels; /* raw message sent     */
+  struct datalinkMessageTruth_ref         *truthSim;      /* raw message received */
+  struct datalinkMessageHITLSim2Onboard_ref *sim2onboard; /* raw message received */
+  struct datalinkMessageHITLOnboard2Sim_ref *onboard2sim; /* raw message sent     */
+  struct datalinkMessageOptitrack_ref     *optitrack;     /* raw message received */
+  struct datalinkMessageMotorCmd_ref        *motors;        /* raw message sent */
 };
 
-struct datalinkWork_ref
-{
+struct datalinkWork_ref {
 	uint32_t itime; /* number of messages received */
 	int32_t badChecksums; /* */
 	int32_t badHeaderChecksums; /*  */
 };
 
-struct datalinkHeader_ref
-{
+struct datalinkHeader_ref {
 	unsigned char sync1; /*  */
 	unsigned char sync2; /*  */
 	unsigned char sync3; /*  */
@@ -173,7 +191,7 @@ struct datalinkMessageUp0_ref {
   char button[16]; /* button flags */
 };
 
-struct datalinkMessageRCChannel_ref {
+struct datalinkMessagePWM_ref {
   unsigned char sync1; /*  */
   unsigned char sync2; /*  */
   unsigned char sync3; /*  */
@@ -182,9 +200,8 @@ struct datalinkMessageRCChannel_ref {
   int messageSize; /* including header */
   unsigned int hcsum; /*  */
   unsigned int csum; /*  */
-  int k; /* discrete time onboard */
-  float time; /* onboard time */
-  unsigned int rc_channels[16]; /* rc channel information */
+  unsigned short raw_pwm[17]; /* */
+  unsigned short align; /* */
 };
 
 struct datalinkMessageAutopilotDels_ref {
@@ -202,13 +219,139 @@ struct datalinkMessageAutopilotDels_ref {
   float c_delt[1]; /*  */
 };
 
+struct datalinkMessageTruth_ref {
+  unsigned char sync1; /*  */
+  unsigned char sync2; /*  */
+  unsigned char sync3; /*  */
+  unsigned char spare; /*  */
+  int messageID; /* id # */
+  int messageSize; /* including header */
+  unsigned int hcsum; /*  */
+  unsigned int csum; /*  */
+  unsigned int align; /*  */
+  float p_b_e_L[3]; /*  */
+  float v_b_e_L[3]; /*  */
+  float q[4]; /*  */
+};
+
+struct datalinkMessageHITLSim2Onboard_ref {
+  unsigned char sync1; /*  */
+  unsigned char sync2; /*  */
+  unsigned char sync3; /*  */
+  unsigned char spare; /*  */
+  int messageID; /* id # */
+  int messageSize; /* including header */
+  unsigned int hcsum; /*  */
+  unsigned int csum; /*  */
+  float phiCmd; /*  */
+  float posDes_x; /*  */
+  float posDes_y; /*  */
+  float posDes_z; /*  */
+  float nav_p_x; /*  */
+  float nav_p_y; /*  */
+  float nav_p_z; /*  */
+  float nav_v_x; /*  */
+  float nav_v_y; /*  */
+  float nav_v_z; /*  */
+  float nav_w_x; /*  */
+  float nav_w_y; /*  */
+  float nav_w_z; /*  */
+  float nav_phi; /*  */
+  float nav_theta; /*  */
+  float nav_psi; /*  */
+};
+
+struct datalinkMessageHITLOnboard2Sim_ref {
+  unsigned char sync1; /*  */
+  unsigned char sync2; /*  */
+  unsigned char sync3; /*  */
+  unsigned char spare; /*  */
+  int messageID; /* id # */
+  int messageSize; /* including header */
+  unsigned int hcsum; /*  */
+  unsigned int csum; /*  */
+  float c_delf; /*  */
+  float c_delm0; /*  */
+  float c_delm1; /*  */
+  float c_delm2; /*  */
+};
+
+struct datalinkMessageOptitrack_ref {
+    unsigned char sync1; /*  */
+    unsigned char sync2; /*  */
+    unsigned char sync3; /*  */
+    unsigned char spare; /*  */
+    int messageID; /* id # */
+    int messageSize; /* including header */
+    unsigned int hcsum; /*  */
+    unsigned int csum; /*  */
+    float pos_x; /*  */
+    float pos_y; /*  */
+    float pos_z; /*  */
+    float qx; /*  */
+    float qy; /*  */
+    float qz; /*  */
+    float qw; /*  */
+};
+
+struct datalinkMessageMotorCmd_ref {
+  unsigned char sync1; /*  */
+  unsigned char sync2; /*  */
+  unsigned char sync3; /*  */
+  unsigned char spare; /*  */
+  int messageID; /* id # */
+  int messageSize; /* including header */
+  unsigned int hcsum; /*  */
+  unsigned int csum; /*  */
+  int k; /* discrete time onboard */
+  float time; /* onboard time */
+  float motor_cmd[4]; /* motor cmd values */
+};
+
 extern struct obDatalink_ref obDatalink;
 extern struct datalinkHeader_ref obDatalinkMessageHeader;
 extern struct datalinkMessage0_ref obDatalinkMessage0;
 extern struct datalinkMessage1_ref obDatalinkMessage1;
 extern struct datalinkMessageUp0_ref obDatalinkMessageUp0;
-extern struct datalinkMessageRCChannel_ref obDatalinkMessageRCChannel;
+extern struct datalinkMessagePWM_ref obDatalinkMessagePWM;
 extern struct datalinkMessageAutopilotDels_ref obDatalinkMessageAutopilotDels;
+extern struct datalinkMessageTruth_ref obDatalinkMessageTruth;
+extern struct datalinkMessageHITLSim2Onboard_ref obDatalinkMessageSim2Onboard;
+extern struct datalinkMessageHITLOnboard2Sim_ref obDatalinkMessageOnboard2Sim;
+extern struct datalinkMessageOptitrack_ref obDatalinkMessageOptitrack;
+extern struct datalinkMessageMotorCmd_ref obDatalinkMessageMotorCmd;
+
+extern wifi ether;
+extern RC_PILOT rc;
+extern Controller cntrl;
+
+class Dlink
+{
+public:
+  Dlink();
+  ~Dlink();
+
+  void init();
+  void recv_update();
+  void send_update();
+
+  void set_interval( long intervalX, int type );
+private:
+  long intervalUp0;
+  long intervalPWM;
+  long intervalAutopilotDels;
+  long intervalTruthSim;
+  long intervalSim2Onboard;
+  long intervalOnboard2Sim;
+  long intervalOptitrack;
+  unsigned long previousMillisUp0;
+  unsigned long previousMillisPWM;
+  unsigned long previousMillisAutopilotDels;
+  unsigned long previousMillisTruthSim;
+  unsigned long previousMillisSim2Onboard;
+  unsigned long previousMillisOnboard2Sim;
+  unsigned long previousMillisOptitrack;
+};
 
 uint32_t datalinkCheckSumCompute(unsigned char* buf, int32_t byteCount);
 void datalinkCheckSumEncode(unsigned char* buf, uint32_t byteCount);
@@ -216,7 +359,9 @@ void datalinkCheckSumEncode(unsigned char* buf, uint32_t byteCount);
 void readDatalink( WiFiUDP* wf );
 void writeM0( WiFiUDP* wf );
 void writeM1( WiFiUDP* wf );
-void writeAutopilotDels( WiFiUDP* wf );
-void writeRcChannels( WiFiUDP* wf, RC_PILOT* rc );
+void writeUP0( WiFiUDP* wf, RC_PILOT* rc );
+void writePWM( WiFiUDP* wf );
+void writeAutopilotDels( WiFiUDP* wf, Controller* cntrl );
+void writeMotors(WiFiUDP*, Controller* cntrl);
 
 #endif

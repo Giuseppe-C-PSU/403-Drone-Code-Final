@@ -12,13 +12,17 @@
  * http://purl.psu.edu
  *
  * Contact Information:
- * Dr. Thanakorn Khamvilai Email: thanakorn.khamvilai@ttu.edu
- * Dr. Vitor Valente       Email: vitor.valente@psu.edu
+ * Dr. Thanakorn Khamvilai (thanakorn.khamvilai@ttu.edu)
+ * Dr. Vitor T. Valente (vitor.valente@psu.edu)
  *
  * EndCopyright
  ***/
 
+
 #include "datalink.h"
+#include "wifi.h"
+#include "rc_pilot.h"
+
 
 struct datalinkWork_ref obDatalinkWork = {
 	0 , /* uint itime */
@@ -144,7 +148,7 @@ struct datalinkMessageUp0_ref obDatalinkMessageUp0 = {
   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} , /* char button[16] */
 };
 
-struct datalinkMessageRCChannel_ref obDatalinkMessageRCChannel = {
+struct datalinkMessagePWM_ref obDatalinkMessagePWM = {
   0xa3 , /* uchar sync1 */
   0xb2 , /* uchar sync2 */
   0xc1 , /* uchar sync3 */
@@ -153,9 +157,22 @@ struct datalinkMessageRCChannel_ref obDatalinkMessageRCChannel = {
   0 , /* int messageSize */
   0 , /* uint hcsum */
   0 , /* uint csum */
-  0 , /* int k */
-  0 , /* float time */
-  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} , /* unsigned int rc_channels[16] */
+  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} , /* raw_pwm[17] */
+  0, /* align */
+};
+
+struct datalinkMessageMotorCmd_ref obDatalinkMessageMotorCmd = {
+  0xa3 , /* uchar sync1 */
+  0xb2 , /* uchar sync2 */
+  0xc1 , /* uchar sync3 */
+  0 , /* uchar spare */
+  0 , /* int messageID */
+  0 , /* int messageSize */
+  0 , /* uint hcsum */
+  0 , /* uint csum */
+  0 , /* discrete onboard time*/
+  0 , /* onboard time */
+  {0,0,0,0} , /* motor_cmd[4]*/
 };
 
 struct datalinkMessageAutopilotDels_ref obDatalinkMessageAutopilotDels = {
@@ -173,29 +190,218 @@ struct datalinkMessageAutopilotDels_ref obDatalinkMessageAutopilotDels = {
   {0} , /* float c_delt[1] */
 };
 
+struct datalinkMessageTruth_ref obDatalinkMessageTruth = {
+  0xa3 , /* uchar sync1 */
+  0xb2 , /* uchar sync2 */
+  0xc1 , /* uchar sync3 */
+  0 , /* uchar spare */
+  0 , /* int messageID */
+  0 , /* int messageSize */
+  0 , /* uint hcsum */
+  0 , /* uint csum */
+  0 , /* uint align  */
+  {0,0,0} , /* float p_b_e_L[3]  */
+  {0,0,0} , /* float v_b_e_L[3]  */
+  {0,0,0,0} , /* float q[4]  */
+};
+
+struct datalinkMessageHITLSim2Onboard_ref obDatalinkMessageSim2Onboard = {
+  0xa3 , /* uchar sync1 */
+  0xb2 , /* uchar sync2 */
+  0xc1 , /* uchar sync3 */
+  0 , /* uchar spare */
+  0 , /* int messageID */
+  0 , /* int messageSize */
+  0 , /* uint hcsum */
+  0 , /* uint csum */
+  0 , /* float phiCmd */
+  0 , /* float posDes_x */
+  0 , /* float posDes_y */
+  0 , /* float posDes_z */
+  0 , /* float nav_p_x  */
+  0 , /* float nav_p_y  */
+  0 , /* float nav_p_z  */
+  0 , /* float nav_v_x  */
+  0 , /* float nav_v_y  */
+  0 , /* float nav_v_z  */
+  0 , /* float nav_w_x  */
+  0 , /* float nav_w_y  */
+  0 , /* float nav_w_z  */
+  0 , /* float nav_phi  */
+  0 , /* float nav_theta  */
+  0 , /* float nav_psi  */
+};
+
+struct datalinkMessageHITLOnboard2Sim_ref obDatalinkMessageOnboard2Sim = {
+  0xa3 , /* uchar sync1 */
+  0xb2 , /* uchar sync2 */
+  0xc1 , /* uchar sync3 */
+  0 , /* uchar spare */
+  0 , /* int messageID */
+  0 , /* int messageSize */
+  0 , /* uint hcsum */
+  0 , /* uint csum */
+  0 , /* float c_delf; */
+  0 , /* float c_delm0; */
+  0 , /* float c_delm1; */
+  0 , /* float c_delm2; */
+};
+
+struct datalinkMessageOptitrack_ref obDatalinkMessageOptitrack = {
+  0xa3 , /* uchar sync1 */
+  0xb2 , /* uchar sync2 */
+  0xc1 , /* uchar sync3 */
+  0 , /* uchar spare */
+  0 , /* int messageID */
+  0 , /* int messageSize */
+  0 , /* uint hcsum */
+  0 , /* uint csum */
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+};
+
 struct obDatalink_ref obDatalink = {
   &obDatalinkWork, /* dir work */
 	&obDatalinkMessageHeader, /* dir header */
   &obDatalinkMessage0, /* dir m0 */
   &obDatalinkMessage1, /* dir m1 */
   &obDatalinkMessageUp0, /* dir up0 */
-  &obDatalinkMessageRCChannel, /* dir rcchannel */
+  &obDatalinkMessagePWM, /* dir pwm */
   &obDatalinkMessageAutopilotDels, /* dir autopilotDels */
+  &obDatalinkMessageTruth, /* dir truthSim */
+  &obDatalinkMessageSim2Onboard, /* dir sim2onboard */
+  &obDatalinkMessageOnboard2Sim, /* dir onboard2sim */
+  &obDatalinkMessageOptitrack, /* dir optitrack */
 };
 
-/**
- * @brief datalinkCheckSumCompute() calculates and returns the checksum of a
- * character buffer
- *
- * Calculates the checksum of a character buffer using a 32-bit Fletcher
- * checksum. Handles an odd number of bytes by calculating the checksum as if
- * there were an additional zero-byte appended to the end of the data.
- *
- * @param buf pointer to a character buffer array
- * @param byteCount the size in bytes of the character buffer
- */
-uint32_t datalinkCheckSumCompute(unsigned char* buf, int32_t byteCount)
-{
+
+Dlink::Dlink(){
+
+}
+
+Dlink::~Dlink(){}
+
+void Dlink::init(){
+  // initialize wifi
+  ether.init();
+  // initialize datalink
+  obDatalink.work = &obDatalinkWork;
+  obDatalink.header = &obDatalinkMessageHeader;
+  obDatalink.m0 = &obDatalinkMessage0;
+  obDatalink.m1 = &obDatalinkMessage1;
+  obDatalink.up0 = &obDatalinkMessageUp0;
+  obDatalink.pwm = &obDatalinkMessagePWM;
+  obDatalink.autopilotDels = &obDatalinkMessageAutopilotDels;
+  obDatalink.truthSim = &obDatalinkMessageTruth;
+  obDatalink.sim2onboard = &obDatalinkMessageSim2Onboard;
+  obDatalink.onboard2sim = &obDatalinkMessageOnboard2Sim;
+  obDatalink.optitrack = &obDatalinkMessageOptitrack;
+  obDatalink.motors = &obDatalinkMessageMotorCmd;
+
+  set_interval( DATALINK_INTERVALUP0, DATALINK_MESSAGE_UP0 );
+  set_interval( DATALINK_INTERVALPWM, DATALINK_MESSAGE_PWM );
+  set_interval( DATALINK_INTERVALAUTOPILOTDELS, DATALINK_MESSAGE_AUTOPILOTDELS );
+  set_interval( DATALINK_INTERVALTRUTH, DATALINK_MESSAGE_TRUTH );
+  set_interval( DATALINK_INTERVALHITL_SIM2ONBOARD, DATALINK_MESSAGE_HITL_SIM2ONBOARD );
+  set_interval( DATALINK_INTERVALHITL_ONBOARD2SIM, DATALINK_MESSAGE_HITL_ONBOARD2SIM );
+  set_interval( DATALINK_INTERVALOPTITRACK, DATALINK_MESSAGE_OPTITRACK );
+}
+
+void Dlink::set_interval( long intervalX, int type ){
+  switch ( type ){
+    case DATALINK_MESSAGE_UP0:
+      obDatalink.up0->messageSize = sizeof( struct datalinkMessageUp0_ref );
+      obDatalink.up0->messageID = DATALINK_MESSAGE_UP0;
+      this->intervalUp0 = intervalX;
+      this->previousMillisUp0 = 0;
+      break;
+    case DATALINK_MESSAGE_PWM:
+      obDatalink.pwm->messageSize = sizeof( struct datalinkMessagePWM_ref );
+      obDatalink.pwm->messageID = DATALINK_MESSAGE_PWM;
+      this->intervalPWM = intervalX;
+      this->previousMillisPWM = 0;
+      break;
+    case DATALINK_MESSAGE_AUTOPILOTDELS:
+      obDatalink.autopilotDels->messageSize = sizeof( struct datalinkMessageAutopilotDels_ref );
+      obDatalink.autopilotDels->messageID = DATALINK_MESSAGE_AUTOPILOTDELS;
+      this->intervalAutopilotDels = intervalX;
+      this->previousMillisAutopilotDels = 0;
+      break;
+    case DATALINK_MESSAGE_TRUTH:
+      obDatalink.truthSim->messageSize = sizeof( struct datalinkMessageTruth_ref );
+      obDatalink.truthSim->messageID = DATALINK_MESSAGE_TRUTH;
+      this->intervalTruthSim = intervalX;
+      this->previousMillisTruthSim = 0;
+      break;
+    case DATALINK_MESSAGE_HITL_SIM2ONBOARD:
+      obDatalink.sim2onboard->messageSize = sizeof( struct datalinkMessageHITLSim2Onboard_ref );
+      obDatalink.sim2onboard->messageID = DATALINK_MESSAGE_HITL_SIM2ONBOARD;
+      this->intervalSim2Onboard = intervalX;
+      this->previousMillisSim2Onboard = 0;
+      break;
+    case DATALINK_MESSAGE_HITL_ONBOARD2SIM:
+      obDatalink.onboard2sim->messageSize = sizeof( struct datalinkMessageHITLOnboard2Sim_ref );
+      obDatalink.onboard2sim->messageID = DATALINK_MESSAGE_HITL_ONBOARD2SIM;
+      this->intervalOnboard2Sim = intervalX;
+      this->previousMillisOnboard2Sim = 0;
+      break;
+    case DATALINK_MESSAGE_OPTITRACK:
+      obDatalink.optitrack->messageSize = sizeof( struct datalinkMessageOptitrack_ref );
+      obDatalink.optitrack->messageID = DATALINK_MESSAGE_OPTITRACK;
+      this->intervalOptitrack = intervalX;
+      this->previousMillisOptitrack = 0;
+      break;
+    default:
+      Serial.println("Error: Invalid type for datalink interval");
+      break;
+  }
+}
+
+void Dlink::recv_update(){
+  // messages to receive from GCS: TruthSim, Sim2Onboard, Optitrack
+  // read datalink optitrack
+  readDatalink( &ether.UdpGPS );
+  // read datalink gcs
+  readDatalink( &ether.UdpGCS );
+}
+
+void Dlink::send_update(){
+  // messages to send to GCS: AutopiloDels, Up0, PWM, Onboard2Sim
+
+  unsigned long currentMillis = millis();
+  if (currentMillis - this->previousMillisAutopilotDels >= this->intervalAutopilotDels) {
+    this->previousMillisAutopilotDels = currentMillis;
+    writeAutopilotDels( &ether.UdpGCS, &cntrl);
+  }
+
+  currentMillis = millis();
+  if (currentMillis - this->previousMillisUp0 >= this->intervalUp0) {
+    this->previousMillisUp0 = currentMillis;
+    writeUP0( &ether.UdpGCS, &rc );
+  }
+
+  currentMillis = millis();
+  if (currentMillis - this->previousMillisPWM >= this->intervalPWM) {
+    this->previousMillisPWM = currentMillis;
+    writePWM( &ether.UdpGCS );
+  }
+
+  currentMillis = millis();
+  if (currentMillis - this->previousMillisSim2Onboard >= this->intervalSim2Onboard) {
+    this->previousMillisSim2Onboard = currentMillis;
+    readDatalink( &ether.UdpGPS );
+  }
+
+
+}
+
+
+uint32_t datalinkCheckSumCompute(unsigned char* buf, int32_t byteCount) {
 
 	uint32_t sum1 = 0xffff;
 	uint32_t sum2 = 0xffff;
@@ -236,15 +442,7 @@ uint32_t datalinkCheckSumCompute(unsigned char* buf, int32_t byteCount)
 	return(sum2 << 16 | sum1);
 }
 
-/**
- * @brief datalinkCheckSumEncode sets the header checksum and payload checksum of a
- * character buffer to be sent as a datalink message
- *
- * @param buf pointer to a character buffer
- * @param byteCount size of the character buffer in bytes
- */
-void datalinkCheckSumEncode(unsigned char* buf, uint32_t byteCount)
-{
+void datalinkCheckSumEncode(unsigned char* buf, uint32_t byteCount) {
 
 	struct datalinkHeader_ref* h = (struct datalinkHeader_ref*)buf;
 
@@ -275,23 +473,21 @@ void readDatalink( WiFiUDP* wf )
 	done = 0;
 	index = 0;
 
-  int bytesread = wf->read(buffer, BUFFERSIZE);
+  int bytesread = wf->read(ether.buffer, BUFFERSIZE);
 
 	while ( ( index <= bytesread - ( int ) sizeof( struct datalinkHeader_ref ) ) && !done )
 	{
-		if ( ( buffer[index] == DATALINK_SYNC0 ) &&
-				 ( buffer[index + 1] == DATALINK_SYNC1 ) &&
-				 ( buffer[index + 2] == DATALINK_SYNC2 ) )
+		if ( ( ether.buffer[index] == DATALINK_SYNC0 ) &&
+				 ( ether.buffer[index + 1] == DATALINK_SYNC1 ) &&
+				 ( ether.buffer[index + 2] == DATALINK_SYNC2 ) )
 		{
-			bf = &( buffer[index] );
-
+			bf = &( ether.buffer[index] );
 			memcpy( data->header, bf, sizeof( struct datalinkHeader_ref ) );
 
 			if ( datalinkCheckSumCompute( bf, sizeof( struct datalinkHeader_ref ) - sizeof( int ) * 2 ) == data->header->hcsum &&
 					 data->header->messageSize >= sizeof( struct datalinkHeader_ref ) &&
 					 data->header->messageSize < BUFFERSIZE )
 			{
-
 				if ( data->header->messageSize + index <= bytesread )
 				{
 					/* have read in the entire message */
@@ -301,24 +497,39 @@ void readDatalink( WiFiUDP* wf )
 					{
             switch ( data->header->messageID )
 						{
-							case DATALINK_MESSAGE_UP0:
-							if ( data->header->messageSize == sizeof( struct datalinkMessageUp0_ref ) )
+              case DATALINK_MESSAGE_OPTITRACK:
+							if ( data->header->messageSize == sizeof( struct datalinkMessageOptitrack_ref ) )
 							{
-                memcpy( data->up0, bf, sizeof( struct datalinkMessageUp0_ref ) );
+                memcpy( data->optitrack, bf, sizeof( struct datalinkMessageOptitrack_ref ) );
+                // Serial.print(data->optitrack->pos_x);
+                // Serial.print("\t ");
+                // Serial.print(data->optitrack->pos_y);
+                // Serial.print("\t ");
+                // Serial.print(data->optitrack->pos_z);
+                // Serial.print("\t ");
+                // Serial.print(data->optitrack->qw);
+                // Serial.print("\t ");
+                // Serial.print(data->optitrack->qx);
+                // Serial.print("\t ");
+                // Serial.print(data->optitrack->qy);
+                // Serial.print("\t ");
+                // Serial.println(data->optitrack->qz);
+							}
+							break;
 
-                if ( isfinite( data->up0->throttleLever ) &&
-                      isfinite( data->up0->rollStick ) &&
-                      isfinite( data->up0->pitchStick ) &&
-                      isfinite( data->up0->rudderPedal ) )
-                {
-                  data->m1->yrdStatus = 1; // good receiver data
+              case DATALINK_MESSAGE_TRUTH:
+							if ( data->header->messageSize == sizeof( struct datalinkMessageTruth_ref ) )
+							{
+                memcpy( data->truthSim, bf, sizeof( struct datalinkMessageTruth_ref ) );
 
-                  // save RC commands and add to message1 to send back to gcs
-                  // ob->actuators->work->delm[0] = constrain( data->up0->rollStick, -1.0, 1.0 );
-                  // ob->actuators->work->delm[1] = constrain( data->up0->pitchStick, -1.0, 1.0 );
-                  // ob->actuators->work->delm[2] = constrain( data->up0->rudderPedal, -1.0, 1.0 );
-                  // ob->actuators->work->delf[0] = constrain( data->up0->throttleLever, -1.0, 1.0 );
-                }
+							}
+							break;
+
+              case DATALINK_MESSAGE_HITL_SIM2ONBOARD:
+							if ( data->header->messageSize == sizeof( struct datalinkMessageHITLSim2Onboard_ref ) )
+							{
+                memcpy( data->sim2onboard, bf, sizeof( struct datalinkMessageHITLSim2Onboard_ref ) );
+
 							}
 							break;
 
@@ -365,14 +576,51 @@ void writeM1( WiFiUDP* wf )
 
 }
 
-void writeAutopilotDels( WiFiUDP* wf )
+void writeUP0( WiFiUDP* wf, RC_PILOT* rc )
 {
   struct obDatalink_ref* data = &obDatalink;
 
-  data->autopilotDels->c_delf[0] = 0.1; //data->up0->throttleLever; // sample, need to be changed
-  data->autopilotDels->c_delm[0] = 0.2; //data->up0->rollStick; // sample, need to be changed
-  data->autopilotDels->c_delm[1] = 0.3; //data->up0->pitchStick; // sample, need to be changed
-  data->autopilotDels->c_delm[2] = 0.4; //data->up0->rudderPedal; // sample, need to be changed
+  data->up0->throttleLever = rc->rc_in.THR;
+  data->up0->rollStick = rc->rc_in.ROLL;
+  data->up0->pitchStick = rc->rc_in.PITCH;
+  data->up0->rudderPedal = rc->rc_in.YAW;
+
+  data->up0->button[0] = rc->rc_in.AUX;
+  data->up0->button[1] = rc->rc_in.AUX2;
+
+  data->up0->messageID = DATALINK_MESSAGE_UP0;
+  datalinkCheckSumEncode ( ( unsigned char* ) data->up0, sizeof ( struct datalinkMessageUp0_ref) );
+
+  wf->beginPacket(wf->remoteIP(), wf->remotePort());
+  wf->write(( char* ) data->up0, sizeof ( struct datalinkMessageUp0_ref));
+  wf->endPacket();
+}
+
+void writePWM( WiFiUDP* wf ){
+  struct obDatalink_ref* data = &obDatalink;
+
+  data->pwm->raw_pwm[0] = cntrl.pwmout_0; /* M1 */
+  data->pwm->raw_pwm[1] = cntrl.pwmout_1; /* M2 */
+  data->pwm->raw_pwm[2] = cntrl.pwmout_2; /* M3 */
+  data->pwm->raw_pwm[3] = cntrl.pwmout_3; /* M4 */
+
+  data->pwm->messageID = DATALINK_MESSAGE_UP0;
+  datalinkCheckSumEncode ( ( unsigned char* ) data->pwm, sizeof ( struct datalinkMessagePWM_ref) );
+
+  wf->beginPacket(wf->remoteIP(), wf->remotePort());
+  wf->write(( char* ) data->pwm, sizeof ( struct datalinkMessagePWM_ref));
+  wf->endPacket();
+}
+
+void writeAutopilotDels( WiFiUDP* wf, Controller* cntrl )
+{
+  struct obDatalink_ref* data = &obDatalink;
+
+  data->autopilotDels->c_delf[0] = cntrl->c_delf;
+  data->autopilotDels->c_delm[0] = cntrl->c_delm0;
+  data->autopilotDels->c_delm[1] = cntrl->c_delm1;
+  data->autopilotDels->c_delm[2] = cntrl->c_delm2;
+  data->autopilotDels->c_delt[0] = 1.0f;
 
   data->autopilotDels->messageID = DATALINK_MESSAGE_AUTOPILOTDELS;
 	datalinkCheckSumEncode ( ( unsigned char* ) data->autopilotDels, sizeof ( struct datalinkMessageAutopilotDels_ref) );
@@ -382,24 +630,21 @@ void writeAutopilotDels( WiFiUDP* wf )
   wf->endPacket();
 }
 
-void writeRcChannels( WiFiUDP* wf , RC_PILOT* rc)
+void writeMotors(WiFiUDP* wf, Controller* cntrl)
 {
   struct obDatalink_ref* data = &obDatalink;
 
-  data->rc->rc_channels[0] = rc->rc_in.ROLL;
-  data->rc->rc_channels[1] = rc->rc_in.PITCH;
-  data->rc->rc_channels[2] = rc->rc_in.THR;
-  data->rc->rc_channels[3] = rc->rc_in.YAW;
-  data->rc->rc_channels[4] = rc->rc_in.AUX;
-  data->rc->rc_channels[5] = rc->rc_in.AUX2;
+  data->motors->motor_cmd[0] = cntrl->pwmout_0;
+  data->motors->motor_cmd[1] = cntrl->pwmout_1;
+  data->motors->motor_cmd[2] = cntrl->pwmout_2;
+  data->motors->motor_cmd[3] = cntrl->pwmout_3;
+  data->motors->k = 0;
+  data->motors->time = 0.0f;
 
-  for(int i=6;i<MAX_RC_CHANNELS;i++)
-    data->rc->rc_channels[i] = 1500;
-
-  data->rc->messageID = DATALINK_MESSAGE_RCCHANNEL;
-  datalinkCheckSumEncode ( ( unsigned char* ) data->rc, sizeof ( struct datalinkMessageRCChannel_ref) );
+  data->motors->messageID = DATALINK_MESSAGE_MOTOR_CMD;
+  datalinkCheckSumEncode ( ( unsigned char* ) data->motors, sizeof ( struct datalinkMessageMotorCmd_ref) );
 
   wf->beginPacket(wf->remoteIP(), wf->remotePort());
-  wf->write(( char* ) data->rc, sizeof ( struct datalinkMessageRCChannel_ref));
+  wf->write(( char* ) data->motors, sizeof ( struct datalinkMessageMotorCmd_ref));
   wf->endPacket();
 }

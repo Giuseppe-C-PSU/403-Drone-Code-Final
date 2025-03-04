@@ -6,15 +6,15 @@
 #include "rc_pilot.h"
 #include "sensor_prelim.h"
 #include "controller.h"
+#include "datalink.h"
 
 
 // stuff from onboard code from canvas
-#define HAVE_DATALINK    0
+#define HAVE_DATALINK    1
 #define HAVE_IMU         1
 #define HAVE_RC_RECEIVER 1
 #define HAVE_MOTORS      1
 #define HAVE_THERMAL     0
-#define HAVE_DATALINK    1
 
 const unsigned long intervalIMU = 10;
 const unsigned long intervalRC = 100;
@@ -31,6 +31,8 @@ unsigned long previousMillisThermal = 0;
 Motors motors;
 extern RC_PILOT rc;
 Controller cntrl;
+Dlink datalink;
+wifi ether;
 
 unsigned long previousMillis = 0;
 const long interval = 500;
@@ -54,7 +56,9 @@ void setup()
 
     motors.init();
 
-    //datalink.init();
+    #if HAVE_DATALINK
+    datalink.init();
+    #endif
 
     // thermal_setup();
 
@@ -108,11 +112,20 @@ void loop()
         pwm[2] = 900;
         pwm[3] = 900;
       } 
+
+      // rc.print();
   }
   #endif
 
   #if HAVE_DATALINK
- // datalink.recv_update();
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  readDatalink( &ether.UdpGCS );
+  readDatalink( &ether.UdpGPS );
+  writeUP0(&ether.UdpGCS,&rc);
+  writeMotors(&ether.UdpGCS, &cntrl);
+  writeAutopilotDels(&ether.UdpGCS, &cntrl);
+
+  
   #endif
 
   #if HAVE_MOTORS
@@ -120,15 +133,12 @@ void loop()
     previousMillisMotors = currentMillis;
     
     cntrl.controller_loop();
-    cntrl.print();
+    // cntrl.print();
 
     motors.update(pwm);
   }
   #endif
   
 
-
   
-
-    
 }

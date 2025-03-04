@@ -12,28 +12,27 @@
  * http://purl.psu.edu
  *
  * Contact Information:
- * Dr. Thanakorn Khamvilai
- * Email : thanakorn.khamvilai@psu.edu
+ * Dr. Thanakorn Khamvilai (thanakorn.khamvilai@ttu.edu)
+ * Dr. Vitor T. Valente (vitor.valente@psu.edu)
  *
  * EndCopyright
  ***/
 
-#include "wifi.h"
+#include "../include/wifi.h"
+#include "../include/rc_pilot.h"
 
-/////// Please enter your sensitive data here
-char ssid[] = "ECORE_448_3DPRINTERS";    // your network SSID (name)
-char pass[] = "ecore_448_3dprinters";    // your network password (use for WPA, or use as key for WEP)
+wifi::wifi(){
+  this->ssid = "ECORE_001_MOCAP"; // your network SSID (name)
+  this->pass = "ecore_001_mocap"; // your network password (use for WPA, or use as key for WEP)
 
-int status = WL_IDLE_STATUS;
-int keyIndex = 0;             // your network key index number (needed only for WEP)
+  this->keyIndex = 0;
+  this->localPortGCS = 10001;  // this need to match target port from GCS
+  this->localPortGPS = 9001;   // this need to match target port from GPS/Mocap
+}
 
-unsigned int localPort = 25565;      // local port to listen on
+wifi::~wifi() {};
 
-unsigned char buffer[BUFFERSIZE]; //buffer to hold incoming packet
-
-WiFiUDP Udp;
-
-void WifiSetup() {
+void wifi::init() {
   // check for the WiFi module:
   if (WiFi.status() == WL_NO_MODULE) {
     Serial.println("Communication with WiFi module failed!");
@@ -49,22 +48,24 @@ void WifiSetup() {
   // attempt to connect to WiFi network:
   while (status != WL_CONNECTED) {
     Serial.print("Attempting to connect to SSID: ");
-    Serial.println(ssid);
+    Serial.println(this->ssid);
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-    status = WiFi.begin(ssid, pass);
+    this->status = WiFi.begin(this->ssid, this->pass);
 
-    // wait 10 seconds for connection:
-    delay(10000);
+    // wait 2 seconds for connection:
+    delay(2000);
   }
   Serial.println("Connected to WiFi");
-  printWifiStatus();
+
+  this->print_status();
 
   Serial.println("\nStarting connection to server...");
   // if you get a connection, report back via serial:
-  Udp.begin(localPort);
+  this->UdpGPS.begin(this->localPortGPS);
+  this->UdpGCS.begin(this->localPortGCS);
 }
 
-void printWifiStatus() {
+void wifi::print_status() {
   // print the SSID of the network you're attached to:
   Serial.print("SSID: ");
   Serial.println(WiFi.SSID());

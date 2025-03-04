@@ -31,19 +31,13 @@ float Controller::cumulativeMovingAverage(float newValue, float* average, int co
 
 
 void Controller::controller_loop() {
-    if (c_delf == nullptr) {
-        c_delf = new float;
-        c_delm0 = new float;
-        c_delm1 = new float;
-        c_delm2 = new float;
-    }
 
 
     
-    *c_delf  = ( applyDeadband((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0), DEAD_BAND) );
-    *c_delm2 = ( applyDeadband((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0), DEAD_BAND) * 0.2 - KD[2] * ( sens.data.gyr[2] * DEG2RAD_TERM) );
-    *c_delm0 = ( applyDeadband((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0), DEAD_BAND ) * 0.2 - ( sens.data.euler[0] * DEG2RAD_TERM ) * KP[0] ) - KD[0] * ( sens.data.gyr[0] * DEG2RAD_TERM );
-	*c_delm1 = ( applyDeadband((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0), DEAD_BAND ) * 0.2 + ( sens.data.euler[1] * DEG2RAD_TERM ) * KP[1] ) + KD[1] * ( sens.data.gyr[1] * DEG2RAD_TERM );
+    c_delf  = ( applyDeadband((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0), DEAD_BAND) );
+    c_delm2 = ( applyDeadband((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0), DEAD_BAND) * 0.2 - KD[2] * ( sens.data.gyr[2] * DEG2RAD_TERM) );
+    c_delm0 = ( applyDeadband((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0), DEAD_BAND ) * 0.2 - ( sens.data.euler[0] * DEG2RAD_TERM ) * KP[0] ) - KD[0] * ( sens.data.gyr[0] * DEG2RAD_TERM );
+	c_delm1 = ( applyDeadband((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0), DEAD_BAND ) * 0.2 + ( sens.data.euler[1] * DEG2RAD_TERM ) * KP[1] ) + KD[1] * ( sens.data.gyr[1] * DEG2RAD_TERM );
 
     mixer();
 }
@@ -59,13 +53,13 @@ void Controller::print(){
     // Serial.print(rc.rc_in.YAW); 
     // Serial.print("\n");
 
-    Serial.print(*c_delf);
+    Serial.print(c_delf);
     Serial.print(", ");
-    Serial.print(*c_delm0);
+    Serial.print(c_delm0);
     Serial.print(", ");
-    Serial.print(*c_delm1);
+    Serial.print(c_delm1);
     Serial.print(", ");
-    Serial.print(*c_delm2); 
+    Serial.print(c_delm2); 
     Serial.println();
 
     // Serial.print(*thr_pwm);
@@ -97,10 +91,10 @@ void Controller::mixer(){
     }
 
     		// only throttle and roll
-		*thr_pwm = ( *c_delf - ( -1 ) ) * ( 2000 - 1000 ) / ( 1 - ( -1 ) ) + 1000; // from [-1,1] to [1000,2000]
-		*roll_pwm = ( *c_delm0 - ( -1 ) ) * ( 500 - ( -500 ) ) / ( 1 - ( -1 ) ) + ( -500 ); // from [-1,1] to [-500,500]
-		*pitch_pwm = ( *c_delm1 - ( -1 ) ) * ( 500 - ( -500 ) ) / ( 1 - ( -1 ) ) + ( -500 ); // from [-1,1] to [-500,500]
-		*yaw_pwm = ( *c_delm2 - ( -1 ) ) * ( 500 - ( -500 ) ) / ( 1 - ( -1 ) ) + ( -500 ); // from [-1,1] to [-500,500]
+		*thr_pwm = ( c_delf - ( -1 ) ) * ( 2000 - 1000 ) / ( 1 - ( -1 ) ) + 1000; // from [-1,1] to [1000,2000]
+		*roll_pwm = ( c_delm0 - ( -1 ) ) * ( 500 - ( -500 ) ) / ( 1 - ( -1 ) ) + ( -500 ); // from [-1,1] to [-500,500]
+		*pitch_pwm = ( c_delm1 - ( -1 ) ) * ( 500 - ( -500 ) ) / ( 1 - ( -1 ) ) + ( -500 ); // from [-1,1] to [-500,500]
+		*yaw_pwm = ( c_delm2 - ( -1 ) ) * ( 500 - ( -500 ) ) / ( 1 - ( -1 ) ) + ( -500 ); // from [-1,1] to [-500,500]
 
         // float thr_pwm = c_delf;
 		// float roll_pwm = c_delm0;

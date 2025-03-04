@@ -28,9 +28,7 @@
   - Aux2     -> Pin 1
 */
 
-#include "wifi.h"
 #include "rc_pilot.h"
-#include "datalink.h"
 #include "rc_pilot_reading.h"
 
   RC_PILOT rc;
