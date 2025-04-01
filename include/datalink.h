@@ -26,6 +26,7 @@
 #include "wifi.h"
 #include "rc_pilot.h"
 #include "controller.h"
+#include "EKF.h"
 
 #define DATALINK_SYNC0 0xa3
 #define DATALINK_SYNC1 0xb2
@@ -41,15 +42,17 @@
 #define DATALINK_MESSAGE_HITL_SIM2ONBOARD 222
 #define DATALINK_MESSAGE_HITL_ONBOARD2SIM 223
 #define DATALINK_MESSAGE_OPTITRACK 230
+#define DATALINK_MESSAGE_GAIN_CMD 420
 
 #define DATALINK_INTERVALUP0 100
-#define DATALINK_INTERVALPWM 100
+#define DATALINK_INTERVALPWM 0
 #define DATALINK_INTERVALAUTOPILOTDELS 100
 #define DATALINK_INTERVALTRUTH 100
 #define DATALINK_INTERVALHITL_SIM2ONBOARD 100
 #define DATALINK_INTERVALHITL_ONBOARD2SIM 100
 #define DATALINK_INTERVALOPTITRACK 10
-#define DATALINK_MOTOR_CMD 100
+#define DATALINK_MOTOR_CMD 0
+#define DATALINK_GAIN_CMD_INTERVAL 100
 
 
 struct obDatalink_ref
@@ -66,6 +69,7 @@ struct obDatalink_ref
   struct datalinkMessageHITLOnboard2Sim_ref *onboard2sim; /* raw message sent     */
   struct datalinkMessageOptitrack_ref     *optitrack;     /* raw message received */
   struct datalinkMessageMotorCmd_ref        *motors;        /* raw message sent */
+  struct datalinkMessageGainCmd_ref       *gain;            /* raw message received*/
 };
 
 struct datalinkWork_ref {
@@ -260,6 +264,16 @@ struct datalinkMessageHITLSim2Onboard_ref {
   float nav_phi; /*  */
   float nav_theta; /*  */
   float nav_psi; /*  */
+  float k_p_x; /* */
+  float k_p_y; /* */
+  float k_p_z; /* */
+  float k_d_x; /* */
+  float k_d_y; /* */
+  float k_d_z; /* */
+  float k_i_x; /* */
+  float k_i_y; /* */
+  float k_i_z; /* */
+
 };
 
 struct datalinkMessageHITLOnboard2Sim_ref {
@@ -275,24 +289,30 @@ struct datalinkMessageHITLOnboard2Sim_ref {
   float c_delm0; /*  */
   float c_delm1; /*  */
   float c_delm2; /*  */
+  float pos_x; /* */
+  float pos_y; /* */
+  float pos_z; /* */
+  float q[4];  /* */
 };
 
 struct datalinkMessageOptitrack_ref {
-    unsigned char sync1; /*  */
-    unsigned char sync2; /*  */
-    unsigned char sync3; /*  */
-    unsigned char spare; /*  */
-    int messageID; /* id # */
-    int messageSize; /* including header */
-    unsigned int hcsum; /*  */
-    unsigned int csum; /*  */
-    float pos_x; /*  */
-    float pos_y; /*  */
-    float pos_z; /*  */
-    float qx; /*  */
-    float qy; /*  */
-    float qz; /*  */
-    float qw; /*  */
+  unsigned char sync1; /*  */
+  unsigned char sync2; /*  */
+  unsigned char sync3; /*  */
+  unsigned char spare; /*  */
+  int messageID; /* id # */
+  int messageSize; /* including header */
+  unsigned int hcsum; /*  */
+  unsigned int csum; /*  */
+  float pos_x; /*  */
+  float pos_y; /*  */
+  float pos_z; /*  */
+  float qx; /*  */
+  float qy; /*  */
+  float qz; /*  */
+  float qw; /*  */
+  int frameNum;
+  int valid;
 };
 
 struct datalinkMessageMotorCmd_ref {
@@ -309,6 +329,21 @@ struct datalinkMessageMotorCmd_ref {
   float motor_cmd[4]; /* motor cmd values */
 };
 
+struct datalinkMessageGainCmd_ref {
+  unsigned char sync1; /*  */
+  unsigned char sync2; /*  */
+  unsigned char sync3; /*  */
+  unsigned char spare; /*  */
+  int messageID; /* id # */
+  int messageSize; /* including header */
+  unsigned int hcsum; /*  */
+  unsigned int csum; /*  */
+  unsigned char align; /*  */
+  float KP[3]; /* Position Gain */
+  float KD[3]; /* Derivative Gain */
+  float KI[3]; /* Integral Gain */
+};
+
 extern struct obDatalink_ref obDatalink;
 extern struct datalinkHeader_ref obDatalinkMessageHeader;
 extern struct datalinkMessage0_ref obDatalinkMessage0;
@@ -321,10 +356,12 @@ extern struct datalinkMessageHITLSim2Onboard_ref obDatalinkMessageSim2Onboard;
 extern struct datalinkMessageHITLOnboard2Sim_ref obDatalinkMessageOnboard2Sim;
 extern struct datalinkMessageOptitrack_ref obDatalinkMessageOptitrack;
 extern struct datalinkMessageMotorCmd_ref obDatalinkMessageMotorCmd;
+extern struct datalinkMessageGainCmd_ref obDatalinkMessageGainCmd;
 
 extern wifi ether;
 extern RC_PILOT rc;
 extern Controller cntrl;
+extern EKF ekf;
 
 class Dlink
 {
@@ -334,7 +371,7 @@ public:
 
   void init();
   void recv_update();
-  void send_update();
+  void send_update(bool value);
 
   void set_interval( long intervalX, int type );
 private:
@@ -366,5 +403,6 @@ void writeUP0( WiFiUDP* wf, RC_PILOT* rc );
 void writePWM( WiFiUDP* wf );
 void writeAutopilotDels( WiFiUDP* wf, Controller* cntrl );
 void writeMotors(WiFiUDP*, Controller* cntrl);
+void writeOnboard2Sim (WiFiUDP* wf, Controller* cntrl, EKF* ekf);
 
 #endif

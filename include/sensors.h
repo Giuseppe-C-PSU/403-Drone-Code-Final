@@ -33,7 +33,7 @@
 #define GRAVITY 9.81
 
 #define NUM_CALIBRATION 500
-#define LOWPASS_WEIGHT 0.7
+#define LOWPASS_WEIGHT 0.1
 
 struct sens_t
 {
@@ -55,9 +55,9 @@ public:
   void print();
 
   sens_t data;
+  sens_t bias;
 
 private:
-  sens_t bias;
   bool calibration_flag;
 };
 

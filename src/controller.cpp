@@ -1,6 +1,7 @@
 #include "controller.h"
 #include "rc_pilot.h"
 #include "sensors.h"
+#include "datalink.h"
 
 #define DEAD_BAND 0.05
 
@@ -28,16 +29,49 @@ float Controller::cumulativeMovingAverage(float newValue, float* average, int co
     return *average;
 }
 
+struct obDatalink_ref* ob = &obDatalink;
+struct datalinkMessageHITLSim2Onboard_ref* s2o = ob->sim2onboard;
 
 
-void Controller::controller_loop() {
-
+void Controller::controller_loop(int value) {
+    // Serial.println(obDatalinkMessageSim2Onboard.nav_psi);
 
     
-    c_delf  = ( applyDeadband((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0), DEAD_BAND) );
-    c_delm2 = ( applyDeadband((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0), DEAD_BAND) * 0.2 - KD[2] * ( sens.data.gyr[2] * DEG2RAD_TERM) );
-    c_delm0 = ( applyDeadband((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0), DEAD_BAND ) * 0.2 - ( sens.data.euler[0] * DEG2RAD_TERM ) * KP[0] ) - KD[0] * ( sens.data.gyr[0] * DEG2RAD_TERM );
-	c_delm1 = ( applyDeadband((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0), DEAD_BAND ) * 0.2 + ( sens.data.euler[1] * DEG2RAD_TERM ) * KP[1] ) + KD[1] * ( sens.data.gyr[1] * DEG2RAD_TERM );
+    if (value == 1)
+    {
+        // Serial.print(s2o->k_p_x);
+        // Serial.print(", ");
+        // Serial.print(s2o->k_p_y);
+        // Serial.print(", ");
+        // Serial.print(s2o->k_p_z);
+        // Serial.print(", \t");
+        // Serial.print(s2o->k_d_x);
+        // Serial.print(", ");
+        // Serial.print(s2o->k_d_y);
+        // Serial.print(", ");
+        // Serial.print(s2o->k_d_z);
+        // Serial.println();
+
+        c_delf  = ( applyDeadband((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0), DEAD_BAND) );
+        c_delm0 = ( applyDeadband((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0), DEAD_BAND ) * 0.2 - ( sens.data.euler[0] * DEG2RAD_TERM ) * s2o->k_p_x ) - s2o->k_d_x * ( sens.data.gyr[0] * DEG2RAD_TERM );
+        c_delm1 = ( applyDeadband((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0), DEAD_BAND ) * 0.2 + ( sens.data.euler[1] * DEG2RAD_TERM ) * s2o->k_p_y ) + s2o->k_d_y * ( sens.data.gyr[1] * DEG2RAD_TERM );
+        c_delm2 = ( applyDeadband((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0), DEAD_BAND) * 0.2 - KD[2] * ( sens.data.gyr[2] * DEG2RAD_TERM) );
+    }else{
+        c_delf  = ( applyDeadband((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0), DEAD_BAND) );
+        c_delm0 = ( applyDeadband((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0), DEAD_BAND ) * 0.02 - ( s2o->nav_phi ) * KP[0] ) - KD[0] * ( s2o->nav_w_x );
+        c_delm1 = ( applyDeadband((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0), DEAD_BAND ) * 0.02 + ( s2o->nav_theta  ) * KP[1] ) + KD[1] * ( s2o->nav_w_y );
+        c_delm2 = ( applyDeadband((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0), DEAD_BAND) );
+
+        // Attitude? Controller?
+        // float p = s2o->nav_w_x; // nav_w_x
+        // float q = s2o->nav_w_y; // nav_w_y
+        // float r = s2o->nav_w_z; // nav_w_z
+
+        // c_delf  = ( applyDeadband((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0), DEAD_BAND) );
+        // c_delm0 = s2o->k_p_x * ( applyDeadband((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0), DEAD_BAND ) - s2o->nav_phi) - s2o->k_d_x * p; //roll x
+        // c_delm1 = s2o->k_p_y * ( applyDeadband((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0), DEAD_BAND ) + s2o->nav_theta) + s2o->k_d_y * q; //pitch y 
+        // c_delm2 = s2o->k_p_z * (float)hmodRad(( applyDeadband((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0), DEAD_BAND) ) - s2o->nav_psi) - s2o->k_d_z * r;//yaw
+    }
 
     mixer();
 }
@@ -101,10 +135,10 @@ void Controller::mixer(){
 		// float pitch_pwm = c_delm1;
 		// float yaw_pwm = c_delm2;
 
-		pwmout_0 = ( unsigned short ) LIMIT( *thr_pwm - *roll_pwm - *pitch_pwm - *yaw_pwm, MIN_PWM, MAX_PWM ); // front-right CW
-		pwmout_1 = ( unsigned short ) LIMIT( *thr_pwm - *roll_pwm + *pitch_pwm + *yaw_pwm, MIN_PWM, MAX_PWM ); // back-right  CCW
-		pwmout_2 = ( unsigned short ) LIMIT( *thr_pwm + *roll_pwm + *pitch_pwm - *yaw_pwm, MIN_PWM, MAX_PWM ); // back-left   CW
-		pwmout_3 = ( unsigned short ) LIMIT( *thr_pwm + *roll_pwm - *pitch_pwm + *yaw_pwm, MIN_PWM, MAX_PWM ); // front-left CCW
+		pwmout_0 = ( unsigned short ) LIMIT( *thr_pwm - *roll_pwm - *pitch_pwm + *yaw_pwm, MIN_PWM, MAX_PWM ); // front-right CW
+		pwmout_1 = ( unsigned short ) LIMIT( *thr_pwm - *roll_pwm + *pitch_pwm - *yaw_pwm, MIN_PWM, MAX_PWM ); // back-right  CCW
+		pwmout_2 = ( unsigned short ) LIMIT( *thr_pwm + *roll_pwm + *pitch_pwm + *yaw_pwm, MIN_PWM, MAX_PWM ); // back-left   CW
+		pwmout_3 = ( unsigned short ) LIMIT( *thr_pwm + *roll_pwm - *pitch_pwm - *yaw_pwm, MIN_PWM, MAX_PWM ); // front-left CCW
 
 
 }

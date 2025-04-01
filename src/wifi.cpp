@@ -21,12 +21,21 @@
 #include "../include/wifi.h"
 #include "../include/rc_pilot.h"
 
+#define USE_448_WIFI 0
+
 wifi::wifi(){
-  this->ssid = "ECORE_001_MOCAP"; // your network SSID (name)
-  this->pass = "ecore_001_mocap"; // your network password (use for WPA, or use as key for WEP)
+
+  #if USE_448_WIFI
+    this->ssid = "ECORE_448_3DPRINTERS"; // your network SSID (name)
+    this->pass = "ecore_448_3dprinters"; // your network password (use for WPA, or use as key for WEP)
+  #else
+    this->ssid = "ECORE_001_MOCAP"; // your network SSID (name)
+    this->pass = "ecore_001_mocap"; // your network password (use for WPA, or use as key for WEP)
+  #endif
 
   this->keyIndex = 0;
-  this->localPortGCS = 10001;  // this need to match target port from GCS
+  this->localPortGCS = 12000;  // this need to match target port from GCS (Onboard)
+  // this->localPortGCS = 10001;   // this need to match target port from GCS (Example)
   this->localPortGPS = 9001;   // this need to match target port from GPS/Mocap
 }
 

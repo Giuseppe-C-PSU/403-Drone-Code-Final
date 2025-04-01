@@ -9,9 +9,9 @@ Sensors sens;
 void pozyx_setup(){
     sens.init();
     pinMode(LED_BUILTIN, OUTPUT);
-    delay(100);
+    // delay(100);
     Serial.println("Initialization Over");
-    delay(1000);
+    // delay(1000);
 }
 
 void pozyx_loop(){

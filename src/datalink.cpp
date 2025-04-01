@@ -22,6 +22,7 @@
 #include "datalink.h"
 #include "wifi.h"
 #include "rc_pilot.h"
+#include "EKF.h"
 
 
 struct datalinkWork_ref obDatalinkWork = {
@@ -230,6 +231,15 @@ struct datalinkMessageHITLSim2Onboard_ref obDatalinkMessageSim2Onboard = {
   0 , /* float nav_phi  */
   0 , /* float nav_theta  */
   0 , /* float nav_psi  */
+  0 , /* float gain p_x */
+  0 , /* float gain p_y */
+  0 , /* float gain p_x */
+  0 , /* float gain d_x */
+  0 , /* float gain d_y */
+  0 , /* float gain d_z */
+  0 , /* float gain i_x */
+  0 , /* float gain i_y */
+  0 , /* float gain i_z */
 };
 
 struct datalinkMessageHITLOnboard2Sim_ref obDatalinkMessageOnboard2Sim = {
@@ -245,6 +255,10 @@ struct datalinkMessageHITLOnboard2Sim_ref obDatalinkMessageOnboard2Sim = {
   0 , /* float c_delm0; */
   0 , /* float c_delm1; */
   0 , /* float c_delm2; */
+  0 , /* float pos_x */
+  0 , /* float pos_y */
+  0 , /* float pos_z */
+  {0, 0, 0, 0}, /* float quaternions */
 };
 
 struct datalinkMessageOptitrack_ref obDatalinkMessageOptitrack = {
@@ -265,6 +279,21 @@ struct datalinkMessageOptitrack_ref obDatalinkMessageOptitrack = {
   0,
 };
 
+struct datalinkMessageGainCmd_ref obDatalinkMessageGainCmd = {
+  0xa3 , /* uchar sync1 */
+  0xb2 , /* uchar sync2 */
+  0xc1 , /* uchar sync3 */
+  0 , /* uchar spare */
+  0 , /* int messageID */
+  0 , /* int messageSize */
+  0 , /* uint hcsum */
+  0 , /* uint csum */
+  0 , /* align */
+  {0,0,0} , /* Position Gain */
+  {0,0,0} , /* Derivative Gain */
+  {0,0,0} , /* Integral Gain */
+};
+
 struct obDatalink_ref obDatalink = {
   &obDatalinkWork, /* dir work */
 	&obDatalinkMessageHeader, /* dir header */
@@ -277,6 +306,8 @@ struct obDatalink_ref obDatalink = {
   &obDatalinkMessageSim2Onboard, /* dir sim2onboard */
   &obDatalinkMessageOnboard2Sim, /* dir onboard2sim */
   &obDatalinkMessageOptitrack, /* dir optitrack */
+  &obDatalinkMessageMotorCmd,
+  &obDatalinkMessageGainCmd,
 };
 
 
@@ -302,6 +333,7 @@ void Dlink::init(){
   obDatalink.onboard2sim = &obDatalinkMessageOnboard2Sim;
   obDatalink.optitrack = &obDatalinkMessageOptitrack;
   obDatalink.motors = &obDatalinkMessageMotorCmd;
+  obDatalink.gain = &obDatalinkMessageGainCmd;
 
   set_interval( DATALINK_INTERVALUP0, DATALINK_MESSAGE_UP0 );
   set_interval( DATALINK_INTERVALPWM, DATALINK_MESSAGE_PWM );
@@ -356,6 +388,9 @@ void Dlink::set_interval( long intervalX, int type ){
       this->intervalOptitrack = intervalX;
       this->previousMillisOptitrack = 0;
       break;
+    case DATALINK_MESSAGE_GAIN_CMD:
+      obDatalink.gain->messageSize = sizeof( struct datalinkMessageGainCmd_ref );
+    break;
     default:
       Serial.println("Error: Invalid type for datalink interval");
       break;
@@ -370,20 +405,31 @@ void Dlink::recv_update(){
   readDatalink( &ether.UdpGCS );
 }
 
-void Dlink::send_update(){
+void Dlink::send_update(bool value){
   // messages to send to GCS: AutopiloDels, Up0, PWM, Onboard2Sim
 
   unsigned long currentMillis = millis();
-  if (currentMillis - this->previousMillisAutopilotDels >= this->intervalAutopilotDels) {
-    this->previousMillisAutopilotDels = currentMillis;
-    writeAutopilotDels( &ether.UdpGCS, &cntrl);
-  }
+  // if (currentMillis - this->previousMillisAutopilotDels >= this->intervalAutopilotDels) {
+  //   this->previousMillisAutopilotDels = currentMillis;
+  //   writeAutopilotDels( &ether.UdpGCS, &cntrl);
+  // }
 
-  currentMillis = millis();
-  if (currentMillis - this->previousMillisUp0 >= this->intervalUp0) {
+  if (value == true)
+  {
+    currentMillis = millis();
+    if (currentMillis - this->previousMillisUp0 >= this->intervalUp0) {
     this->previousMillisUp0 = currentMillis;
     writeUP0( &ether.UdpGCS, &rc );
+    }
   }
+  
+  if (value == false)
+    currentMillis = millis();
+    if (currentMillis - this->previousMillisOnboard2Sim >= this->intervalOnboard2Sim) {
+      this->previousMillisOnboard2Sim = currentMillis;
+      writeOnboard2Sim(&ether.UdpGCS, &cntrl, &ekf);
+    }
+
 
   // currentMillis = millis();
   // if (currentMillis - this->previousMillisPWM >= this->intervalPWM) {
@@ -391,18 +437,11 @@ void Dlink::send_update(){
   //   writePWM( &ether.UdpGCS );
   // }
 
-  currentMillis = millis();
-  if (currentMillis - this->previousMillisMotorCmd >= this->intervalMotorCmd) {
-    this->previousMillisMotorCmd = currentMillis;
-    writeMotors(&ether.UdpGCS, &cntrl);
-  }
-
-
-  currentMillis = millis();
-  if (currentMillis - this->previousMillisSim2Onboard >= this->intervalSim2Onboard) {
-    this->previousMillisSim2Onboard = currentMillis;
-    readDatalink( &ether.UdpGPS );
-  }
+  // currentMillis = millis();
+  // if (currentMillis - this->previousMillisMotorCmd >= this->intervalMotorCmd) {
+  //   this->previousMillisMotorCmd = currentMillis;
+  //   writeMotors(&ether.UdpGCS, &cntrl);
+  // }
 
 
 }
@@ -485,15 +524,15 @@ void readDatalink( WiFiUDP* wf )
 	while ( ( index <= bytesread - ( int ) sizeof( struct datalinkHeader_ref ) ) && !done )
 	{
 		if ( ( ether.buffer[index] == DATALINK_SYNC0 ) &&
-				 ( ether.buffer[index + 1] == DATALINK_SYNC1 ) &&
-				 ( ether.buffer[index + 2] == DATALINK_SYNC2 ) )
+        ( ether.buffer[index + 1] == DATALINK_SYNC1 ) &&
+        ( ether.buffer[index + 2] == DATALINK_SYNC2 ) )
 		{
 			bf = &( ether.buffer[index] );
 			memcpy( data->header, bf, sizeof( struct datalinkHeader_ref ) );
 
 			if ( datalinkCheckSumCompute( bf, sizeof( struct datalinkHeader_ref ) - sizeof( int ) * 2 ) == data->header->hcsum &&
-					 data->header->messageSize >= sizeof( struct datalinkHeader_ref ) &&
-					 data->header->messageSize < BUFFERSIZE )
+          data->header->messageSize >= sizeof( struct datalinkHeader_ref ) &&
+          data->header->messageSize < BUFFERSIZE )
 			{
 				if ( data->header->messageSize + index <= bytesread )
 				{
@@ -502,6 +541,7 @@ void readDatalink( WiFiUDP* wf )
 					/*((struct datalinkHeader_ref *)bf)->hcsum = 0;*/
 					if ( datalinkCheckSumCompute( &bf[sizeof( struct datalinkHeader_ref )], data->header->messageSize - sizeof( struct datalinkHeader_ref ) ) == data->header->csum )
 					{
+            // Serial.println(data->header->messageID);
             switch ( data->header->messageID )
 						{
               case DATALINK_MESSAGE_OPTITRACK:
@@ -542,7 +582,10 @@ void readDatalink( WiFiUDP* wf )
 
 							default:
 							/* unrecognized message */
+              Serial.print("Unrecognized Message");
 							break;
+
+
 						}
 
 						data->work->itime++;
@@ -654,4 +697,31 @@ void writeMotors(WiFiUDP* wf, Controller* cntrl)
   wf->beginPacket(wf->remoteIP(), wf->remotePort());
   wf->write(( char* ) data->motors, sizeof ( struct datalinkMessageMotorCmd_ref));
   wf->endPacket();
+}
+
+void writeOnboard2Sim (WiFiUDP* wf, Controller* cntrl, EKF* ekf)
+{
+  struct obDatalink_ref* data = &obDatalink;
+
+  data->onboard2sim->c_delf = cntrl->c_delf;
+  data->onboard2sim->c_delm0 = cntrl->c_delm0;
+  data->onboard2sim->c_delm1 = cntrl->c_delm1;
+  data->onboard2sim->c_delm2 = cntrl->c_delm2;
+  data->onboard2sim->q[0] = ekf->x_corrected[0];
+  data->onboard2sim->q[1] = ekf->x_corrected[1];
+  data->onboard2sim->q[2] = ekf->x_corrected[2];
+  data->onboard2sim->q[3] = ekf->x_corrected[3];
+  data->onboard2sim->pos_x = ekf->x_corrected[4];
+  data->onboard2sim->pos_y = ekf->x_corrected[5];
+  data->onboard2sim->pos_z = ekf->x_corrected[6];
+
+
+
+  data->onboard2sim->messageID = DATALINK_MESSAGE_HITL_ONBOARD2SIM;
+  datalinkCheckSumEncode ( ( unsigned char* ) data->onboard2sim, sizeof ( struct datalinkMessageHITLOnboard2Sim_ref) );
+
+  wf->beginPacket(wf->remoteIP(), wf->remotePort());
+  wf->write(( char* ) data->onboard2sim, sizeof ( struct datalinkMessageHITLOnboard2Sim_ref));
+  wf->endPacket();
+
 }
