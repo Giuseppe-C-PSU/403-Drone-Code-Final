@@ -20,6 +20,7 @@ private:
     // Pace Attitude Gains
     float KD[3] = {0.1, 0.1, 0.1};
     float KP[3] = {0.05, 0.05, 0.5};
+    float KI[3] = {0.01, 0.01, 0.01};
 
     // float KD[3] = {0, 0, 0};
     // float KP[3] = {0, 0, 0};
@@ -63,7 +64,8 @@ public:
     float c_delm0;
     float c_delm1;
     float c_delm2;
-
+    float integral_error[3] = {0,0,0};
+    float dt = 0.02;
     void controller_loop(int value);
     void print();
     void mixer();

@@ -69,6 +69,7 @@ void Sensors::init()
       this->bias.gyr[j]   += this->data.gyr[j];
       this->bias.euler[j] += this->data.euler[j];
       this->bias.acc[j] += this->data.acc[j];
+      this->bias.quat[j] += this->data.quat[j];
     }
   }
   for(uint8_t i = 0; i < 3; i++)
@@ -76,10 +77,18 @@ void Sensors::init()
     this->bias.gyr[i]   /= NUM_CALIBRATION;
     this->bias.euler[i] /= NUM_CALIBRATION;
     this->bias.acc[i] /= NUM_CALIBRATION;
+    
 
     this->data.gyr[i]   = 0;
     this->data.euler[i] = 0;
     this->data.acc[i] = 0;
+    
+  }
+  for(uint8_t i = 0; i < 4; i++)
+  {
+    this->bias.quat[i] /= NUM_CALIBRATION;
+
+    this->data.quat[i] = 0;
   }
   this->calibration_flag = 1;
 }
@@ -104,6 +113,11 @@ void Sensors::update()
   this->data.euler[0] = sensor_raw.euler_angles[1] * POZYX_EULER_SCALE; // convert to deg
   this->data.euler[1] = sensor_raw.euler_angles[2] * POZYX_EULER_SCALE; // convert to deg
   this->data.euler[2] = sensor_raw.euler_angles[0] * POZYX_EULER_SCALE; // convert to deg
+  // Quaternion Data
+  this->data.quat[0] = sensor_raw.quaternion[0] * POZYX_QUAT_SCALE;
+  this->data.quat[1] = sensor_raw.quaternion[1] * POZYX_QUAT_SCALE;
+  this->data.quat[2] = sensor_raw.quaternion[2] * POZYX_QUAT_SCALE;
+  this->data.quat[3] = sensor_raw.quaternion[3] * POZYX_QUAT_SCALE;
 
   if(this->calibration_flag) // regular reading
   {
@@ -131,16 +145,26 @@ void Sensors::update()
   }
 }
 
+
 void Sensors::print()
 {
  // /*
-  Serial.print(this->data.gyr[0]);// roll rate
+//   Serial.print(this->data.gyr[0]);// roll rate
+//   Serial.print(",");
+//   Serial.print(this->data.gyr[1]);// pitch rate
+//   Serial.print(",");
+//   Serial.print(this->data.gyr[2]);// yaw rate
+//   Serial.print(",");
+//  // */
+
+  Serial.print(this->data.quat[0]);// 
   Serial.print(",");
-  Serial.print(this->data.gyr[1]);// pitch rate
+  Serial.print(this->data.quat[1]);// 
   Serial.print(",");
-  Serial.print(this->data.gyr[2]);// yaw rate
+  Serial.print(this->data.quat[2]);// 
   Serial.print(",");
- // */
+  Serial.print(this->data.quat[3]);// 
+  Serial.print(",\n");
   
  // /*
   // Serial.print(this->data.acc[0]); // x acc 
@@ -159,11 +183,11 @@ void Sensors::print()
 //  Serial.print(",");
 // /*
 
-  Serial.print(this->data.euler[0]); //roll angle
-  Serial.print(",");
-  Serial.print(this->data.euler[1]); //pitch angle
-  Serial.print(",");
-  Serial.print(this->data.euler[2]); //yaw angle
-  Serial.println();
+  // Serial.print(this->data.euler[0]); //roll angle
+  // Serial.print(",");
+  // Serial.print(this->data.euler[1]); //pitch angle
+  // Serial.print(",");
+  // Serial.print(this->data.euler[2]); //yaw angle
+  // Serial.println();
  // */
 }

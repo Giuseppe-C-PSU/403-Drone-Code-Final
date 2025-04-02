@@ -18,7 +18,7 @@
 #define HAVE_MOTORS       1
 #define HAVE_THERMAL      0
 #define HAVE_PRINTS       0
-#define HAVE_EKF          1
+#define HAVE_EKF          0
 #define USE_RC_IN_PACE    1
 
 const unsigned long intervalIMU = 10;
@@ -168,13 +168,23 @@ void loop()
       struct obDatalink_ref* ob = &obDatalink;
       struct datalinkMessageOptitrack_ref* mocap = ob->optitrack;
       float z[MEAS_DIM] = {sens.data.quat[0],sens.data.quat[1],sens.data.quat[2],sens.data.quat[3],mocap->pos_x,mocap->pos_y,mocap->pos_z};
-      Serial.print(mocap->pos_x);
-      Serial.print(", \t");
-      Serial.print(mocap->pos_y);
-      Serial.print(", \t");
-      Serial.print(mocap->pos_z);
-      Serial.print("\n");
+      // Serial.print('z = ');
+      // Serial.print(z[0]);
+      // Serial.print(',');
+      // Serial.print(z[1]);
+      // Serial.print(',');
+      // Serial.print(z[2]);
+      // Serial.print(',');
+      // Serial.print(z[3]);
+      // Serial.println();
       
+      // Serial.print(mocap->pos_x);
+      // Serial.print(",\t");
+      // Serial.print(mocap->pos_y);
+      // Serial.print(",\t");
+      // Serial.print(mocap->pos_z);
+      // Serial.print("\n");
+  
       ekf.update(z);
     }
   #endif
@@ -183,7 +193,7 @@ void loop()
     // rc.print();
     // ekf.printState();
     // cntrl.print();
-    // sens.print();
+    sens.print();
   #endif
   
 

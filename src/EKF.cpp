@@ -3,7 +3,6 @@
 #include "sensors.h"
 #include "sensor_prelim.h"
 
-
 #include <cmath>  // For std::fabs
 #include <algorithm>  // For std::swap
 
@@ -13,7 +12,11 @@ EKF::EKF() {
   // Initialize the state vectors derivative vectors
   //may need to add values for the initial position values
   for (int i = 0; i < STATE_DIM; i++) {
-      if (i < 10){ //adding the biases to the initial value
+    if(i==0){
+      x_predicted[0] = 1;
+      x_corrected[0] = 1;
+    }
+    if (i < 10){ //adding the biases to the initial value
         x_predicted[i] = 0;
         x_corrected[i] = 0;
       }
@@ -90,7 +93,7 @@ EKF::EKF() {
 // Prediction step
 void EKF::predict( float dt) {
   //finding derivative part for state vector prediction
-  xdot(x_predicted, x_dot_next);
+  xdot(x_corrected, x_dot_next);//dont know if should send corrected or predicted state vector
 
   // Eq(10) from paper
   for (int i = 0; i < STATE_DIM; i++) {
@@ -126,14 +129,6 @@ void EKF::predict( float dt) {
 
   // ALL PRINTING HAPPENS BELOW HERE
 
-  //Printing the predicted result for debugging
-  // Serial.print("x_predicted = ");
-  // vectorPrint(x_predicted);
-
-  // Serial.print("P_predicted = ");
-  // matrixPrint(P_predicted);
-  
-  
 }
 
 // Update step
@@ -159,29 +154,7 @@ void EKF::update(float z[MEAS_DIM]) {
     matrixAdd(HPH, R_, HPH_R);
     matrixInverseGaussianElimination(HPH_R, temp_inv);
     matrixMultiply(PH_transpose, temp_inv, K_);
-    // //printing outputs for the things
-    // Serial.println("H_transpose:");
-    // matrixPrint(H_transpose);
-    // Serial.println("PH_transpose:");
-    // matrixPrint(PH_transpose);
-    // Serial.println("HPH:");
-    // matrixPrint(HPH);
-    // Serial.println("HPH_R:");
-    // matrixPrint(HPH_R);
-    // Serial.println("temp_inv:");
-    // matrixPrint(temp_inv);
-    // Serial.println("K:");
-    // matrixPrint(K_);
-   
-    // Additional stability checks for Kalman Gain
-    for (int i = 0; i < STATE_DIM; i++) {
-        for (int j = 0; j < MEAS_DIM; j++) {
-            if (abs(K_[i][j]) > 1e3 || isnan(K_[i][j])) {
-                // Serial.println("Numerical instability detected in Kalman Gain.");
-                return;
-            }
-        }
-    }
+    
 
     
 
@@ -190,71 +163,38 @@ void EKF::update(float z[MEAS_DIM]) {
         h[i] = x_predicted[i];
     }
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < MEAS_DIM; i++) {
         y[i] = z[i] - h[i];
     }
 
     // State update
     vectorMatrixMultiply(K_, y, Ky);
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < STATE_DIM; i++) {
         x_corrected[i] = x_predicted[i] + Ky[i];
     }
 
     // Covariance update
     matrixMultiply(K_, H_, KH);
 
-    // Ensure KH values are within a reasonable range before subtraction
-    for (int i = 0; i < STATE_DIM; i++) {
-        for (int j = 0; j < STATE_DIM; j++) {
-            if (KH[i][j] < -1e3 || KH[i][j] > 1e3) {
-                // Serial.println("Numerical instability detected in KH matrix.");
-                return;
-            }
-        }
-    }
+    
 
     matrixSubtract(I, KH, I_KH);
     matrixMultiply(I_KH, P_predicted, P_corrected);
     
-
     // ALL PRINTING HAPPENS BELOW HERE
-    // Print updated covariance matrix
-    // Serial.print("y = ");
-    // vectorPrint(y);
-
-    // Serial.println("P_corrected:");
-    // matrixPrint(P_corrected);
-
-    // Print updated state vector
-    // Serial.println("x_corrected:");
-    // vectorPrint(x_corrected);
-
     
-
-
 }
 
-
-
-// Print current state
-void EKF::printState() {
-    Serial.print("x_corrected = ");
-    for (int i = 0; i < STATE_DIM; i++) {
-        Serial.print(x_corrected[i]);
-        Serial.print(" ");
-    }
-    Serial.println();
-}
 
 //may need to change how quaternions are gotten idk yet
 void EKF::xdot(float X[STATE_DIM] , float x_dot[STATE_DIM] )
 {
   //creating the variables
   float w_bias[3]; float acc_bias[3]; float acc_IMU[3]; float w_IMU[3]; float q[4];
-  float grav[3] = { 0, 0, -9.81}; float qdot[4]; float vel[3]; float vdot[3];  
+  float grav[3] = { 0, 0, -32.2}; float qdot[4]; float vel[3]; float vdot[3];  float q_hat[4]; //normalized quaternions
   //making all vectors zero vectors
   vectInit(w_bias, 3); vectInit(acc_bias, 3); vectInit(acc_IMU, 3); vectInit(w_IMU, 3); vectInit(q, 4);
-  vectInit(qdot, 4); vectInit(vel, 3); vectInit(vdot, 3);
+  vectInit(qdot, 4); vectInit(vel, 3); vectInit(vdot, 3); vectInit(q_hat, 4);
 
   //initializes variables
   for(int i = 0; i<3; i++)
@@ -270,27 +210,28 @@ void EKF::xdot(float X[STATE_DIM] , float x_dot[STATE_DIM] )
     //q[i] = sens.data.quat[i];
     q[i] = X[i];
   }
+  //normalizing the quaternion values
+ // normalize(q, q_hat);
+  float norm = sqrt( q[0]*q[0] +q[1]*q[1] +q[2]*q[2] +q[3]*q[4] );
+  Serial.print(norm);
+  Serial.println();
+  for (int i = 0; i < 4; i++){
+    q[i] = q[i]/norm;
+  }
+
+
 
   float A[4][4] = { 
         {0, -(w_IMU[0] - w_bias[0]), -(w_IMU[1] - w_bias[1]), -(w_IMU[2] - w_bias[2])},
         {w_IMU[0] - w_bias[0], 0, w_IMU[2] - w_bias[2], -(w_IMU[1] - w_bias[1])},
-        {w_IMU[1] - w_bias[0], -(w_IMU[2] - w_bias[2]), 0, w_IMU[0] - w_bias[0]},
+        {w_IMU[1] - w_bias[1], -(w_IMU[2] - w_bias[2]), 0, w_IMU[0] - w_bias[0]},
         {w_IMU[2] - w_bias[2], w_IMU[1] - w_bias[1], -(w_IMU[0] - w_bias[0]), 0}
   };
 
   float B[4][4]; 
 
   matrixInit(B);
-  // for(int i = 0; i < 4; i++)
-  // {
-  //   for(int j = 0; j < 4; j++)
-  //   {
-  //     Serial.print(B[i][j]);
-  //     Serial.print(", ");
-  //   }
-  //   Serial.println();
-  // }
-  //for q dot, multiplies A by 0.5 to get B
+  
   for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
             B[i][j] = 0.5 * A[i][j];
@@ -299,7 +240,6 @@ void EKF::xdot(float X[STATE_DIM] , float x_dot[STATE_DIM] )
 
   //qdot = B*q = 0.5*A*q
  for (int i = 0; i < 4; i++) {
-        qdot[i] = 0;
         for (int j = 0; j < 4; j++) {
             qdot[i] += B[i][j] * q[j];
         }
@@ -330,12 +270,11 @@ void EKF::xdot(float X[STATE_DIM] , float x_dot[STATE_DIM] )
   }
 
   // result + g= acceleration
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 3; i++) {
         vdot[i] = result[i] + grav[i];
  }
 
   //assigning all values to the xdot vector
-  for (int i = 0; i < STATE_DIM; i++)
   
   x_dot[0] = qdot[0];
   x_dot[1] = qdot[1];
@@ -360,9 +299,12 @@ void EKF::xdot(float X[STATE_DIM] , float x_dot[STATE_DIM] )
 
 void EKF::F_finder(float X[STATE_DIM], float F[STATE_DIM][STATE_DIM]){
 
- float w_bias[3]; float acc_bias[3]; float acc_IMU[3]; float w_IMU[3]; float q[4];  
+ float w_bias[3]; float acc_bias[3]; float acc_IMU[3]; float w_IMU[3]; float q_hat[4];//normalized quaternions  
+ float q[4]; //non-normalized quaternions (from sensor)
  float a[3]; // acceleration accounting for biases
-  //initializes variables
+ float w_bias_hat[3];/*normalized gyro biases*/  float acc_bias_hat[3];//normalized acc biases
+  
+ //initializes variables
   for(int i = 0; i<3; i++)
   {
     w_bias[i] = X[i+13];
@@ -371,11 +313,29 @@ void EKF::F_finder(float X[STATE_DIM], float F[STATE_DIM][STATE_DIM]){
     w_IMU[i] = sens.data.gyr[i];
     a[i] = acc_bias[i] - acc_IMU[i]; // a = ba - aIMU
   }
-  for(int i = 0; i < 4; i++){//is q from sensor or from state vector model?????
-    //q[i] = sens.data.quat[i];
+  for(int i = 0; i < 4; i++){
+    //q[i] = sens.data.quat[i];   //make sure this matches the one from the xdot function
     q[i] = X[i];
   }
+  //normalizing the quaternion values
+  // normalize(q, q_hat);
+  // for (int i = 0; i < 4; i++){
+  //   q[i] = q_hat[i];
+  // }
+  // Serial.print("q = ");
+  // vectorPrint(q);
+  // Serial.println();
+  float norm = sqrt(q[0]*q[0] +q[1]*q[1] +q[2]*q[2] +q[3]*q[4] );
+  Serial.print(norm);
+  Serial.println();
+  for (int i = 0; i < 4; i++){
+    q[i] = q[i]/norm;
+  }
+  // Serial.print("norm = ");
+  // Serial.print(norm);
+  // Serial.println();
 
+  
 
   // multiplying by the 1/2 in the for loop
     float F11[4][4] = {
@@ -452,47 +412,23 @@ void EKF::F_finder(float X[STATE_DIM], float F[STATE_DIM][STATE_DIM]){
     }
   }
 
-  //for testing
-  // Serial.println("F: = ");
-  //     for (int i = 0; i < 16; i++) {
-  //         for (int j = 0; j < 16; j++) {
-  //             Serial.print(F[i][j]);
-  //             Serial.print(", ");
-  //         }
-  //         Serial.println();
-  //     }
-
-
-
+  
 }
 
 void EKF::H_maker(float H[MEAS_DIM][STATE_DIM])
 {
-  for(int i = 0; i < MEAS_DIM; i++)
-  {
-    for(int j = 0; j < STATE_DIM; j++)
-    {
-      if(i == j && i < 7){
-        H[i][j] = 1;
-      }
-    }
-  }
-  
-  
-
-  // Serial.println("H =");
   // for(int i = 0; i < MEAS_DIM; i++)
   // {
   //   for(int j = 0; j < STATE_DIM; j++)
   //   {
-  //       Serial.print(H[i][j]);
-  //       Serial.print(", ");
+  //     if(i == j && i < 7){
+  //       H[i][j] = 1;
+  //     }
   //   }
-  //   Serial.println();
   // }
-
-
-
+  //dont need loop since just making the diagnoal = 1 
+  //off diagnol elements should be 0 since its already initialized to 0
+  H[0][0] = 1; H[1][1] = 1; H[2][2] = 1; H[3][3] = 1; H[4][4] = 1; H[5][5] = 1; H[6][6] = 1;
 }
 
 
@@ -522,7 +458,14 @@ void EKF::vectInit(float* vect, int size)
 //n is rows, m is columns a and b correspond to the matrix being multiplied
 template <int na, int ma, int nb, int mb>
 void EKF::matrixMultiply(float (&a)[na][ma], float (&b)[nb][mb], float (&result)[na][mb]) {
-    
+  //checks if the matrices are compatible for multiplication
+  //A's columns must equal B's rows
+  if(ma != nb) {
+        Serial.println("Matrix multiplication error: incompatible dimensions.");
+        return;
+ }
+
+  // Perform matrix multiplication
   for (int i = 0; i < na; i++) {
         for (int j = 0; j < mb; j++) {
             result[i][j] = 0;
@@ -535,6 +478,14 @@ void EKF::matrixMultiply(float (&a)[na][ma], float (&b)[nb][mb], float (&result)
 
 template <int na, int ma, int nb, int mb>
 void EKF::matrixAdd(float (&a)[na][ma], float (&b)[nb][mb], float (&result)[na][mb]){
+
+  //checks if the matrices are compatible for addition
+  //matrices must be same size
+   if(na != nb || ma != mb) {
+        Serial.println("Matrix addition error: incompatible dimensions.");
+        return;
+    }
+
   for (int i = 0; i < na; i++)
   {
     for (int j = 0; j < mb; j++)
@@ -546,6 +497,17 @@ void EKF::matrixAdd(float (&a)[na][ma], float (&b)[nb][mb], float (&result)[na][
 
 template <int na, int ma, int nb, int mb>
 void EKF::matrixSubtract(float (&a)[na][ma], float (&b)[nb][mb], float (&result)[na][mb]){
+  
+  //checks if the matrices are compatible for subtraction
+  //matrices must be same size
+
+  if(na != nb || ma != mb) 
+    {
+        Serial.println("Matrix subtraction error: incompatible dimensions.");
+        return;
+    }
+
+
   for (int i = 0; i < na; i++)
   {
     for (int j = 0; j < mb; j++)
@@ -586,7 +548,7 @@ bool EKF::matrixInverseGaussianElimination(float (&a)[n][n], float (&result)[n][
         // Make the pivot element 1 and eliminate column below it
         float pivot = augmented[i][i];
         if (fabs(pivot) < 1e-6) {
-            // Serial.println("Matrix is singular, can't compute inverse!");
+            Serial.println("Matrix is singular, can't compute inverse!");
             return false;  // Singular matrix, no inverse
         }
 
@@ -631,6 +593,13 @@ void EKF::matrixTranspose(float (&a)[na][ma], float (&result)[ma][na])
 
 template <int na, int ma, int vb>
 void EKF::vectorMatrixMultiply(float (&a)[na][ma], float (&b)[vb], float (&result)[na]){
+  
+  //checks if the matrices are compatible for multiplication
+  if(ma != vb) {
+        Serial.println("Matrix multiplication error: incompatible dimensions.");
+        return;
+    }
+  
   for (int i = 0; i < na; i++)
   {
     result[i] = 0;
@@ -642,24 +611,38 @@ void EKF::vectorMatrixMultiply(float (&a)[na][ma], float (&b)[vb], float (&resul
 }
 
 
+template<int na>
+void EKF::normalize(float (&a)[na], float (&result)[na]) {
+    float norm = 0;
+    for (int i = 0; i < na; i++) {
+        norm += a[i] * a[i];
+    }
+    norm = sqrt(norm);
+    for (int i = 0; i < na; i++) {
+        result[i] /= norm;
+    }
+}
+
+
+//Printing Functions 
 template <int na, int ma>
 void EKF::matrixPrint(float (&a)[na][ma]) {  
-  // for (int i = 0; i < na; i++) {
-  //       for (int j = 0; j < ma; j++) {
-  //           Serial.print(a[i][j]);
-  //           Serial.print(", ");
-  //       }
-  //       Serial.println();
-  //   }
+  for (int i = 0; i < na; i++) {
+        for (int j = 0; j < ma; j++) {
+            Serial.print(a[i][j]);
+            Serial.print(", ");
+        }
+        Serial.println();
+    }
 }
 
 template <int na>
 void EKF::vectorPrint(float (&a)[na]) {
-    // for (int i = 0; i < na; i++) {
-    //     Serial.print(a[i]);
-    //     Serial.print(", ");
-    // }
-    // Serial.println();
+    for (int i = 0; i < na; i++) {
+        Serial.print(a[i]);
+        Serial.print(", ");
+    }
+    Serial.println();
 }
 
 

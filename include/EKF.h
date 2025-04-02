@@ -13,7 +13,6 @@ public:
     void predict( float dt);  // Prediction step
     void update(float z[MEAS_DIM]);  // Update step
 
-    void printState();  // Utility function to print the state
 
     // State Vector
     float x_predicted[STATE_DIM]; // [q, x, v, ba, bw]
@@ -68,8 +67,7 @@ public:
 
     // UPDATE STEP FUNCTIONS
     void H_maker(float H[MEAS_DIM][STATE_DIM]);
-    
-    
+      
     //INITIALIZATION FUNCTIONS
     template <int na, int ma>
     void matrixInit(float (&a)[na][ma]);
@@ -93,6 +91,9 @@ public:
 
     template <int na, int ma, int vb>
     void vectorMatrixMultiply(float (&a)[na][ma], float (&b)[vb], float (&result)[na]);
+
+    template<int na>
+    void normalize(float (&a)[na], float (&result)[na]);
 
     template <int na, int ma>
     void matrixPrint(float (&a)[na][ma]);
