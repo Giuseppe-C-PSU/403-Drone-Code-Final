@@ -9,6 +9,9 @@
 
 class Controller {
 private:
+
+    
+    // ~~~~~~~~~~~~~~~~ GAINS ~~~~~~~~~~~~~~~~~~~~
     // Arduino Gains
     // float KD[3] = {0.1, 0.1, 0.1};
     // float KP[3] = {0.13, 0.13, 0.13};
@@ -22,20 +25,16 @@ private:
     float KP[3] = {0.05, 0.05, 0.5};
     float KI[3] = {0.01, 0.01, 0.01};
 
-    // float KD[3] = {0, 0, 0};
-    // float KP[3] = {0, 0, 0};
-    // float KD[3] = {3, 3, 3};
-    // float KP[3] = {5, 5, 5};
-    // float TRIM[4] = {0, 0, 0, 0}; // Front Right, Back Right, Back Left, Front Left
+   
+    
 
-    float thrBuffer[10] = {0};
-    float rollBuffer[10] = {0};
-    float pitchBuffer[10] = {0};
-    float yawBuffer[10] = {0};
-    float TRIM[3] = {0,0,0};
+    // ~~~~~~~~~~~~~~~~ CONTROLLERS ~~~~~~~~~~~~~~~~~~~
+
+    // Rate controller vars
+
+    bool have_rc_in_pace;
 
     float applyDeadband(float value, float deadband);
-    float cumulativeMovingAverage(float newValue, float* buffer, int bufferSize);
 
     double hmodRad(double h) {
 
@@ -51,6 +50,23 @@ private:
         return dh;
     }
 
+    // Angle controller vars
+    float angle_KP[3] = {0,0,0};
+    float angle_KD[3] = {0,0,0};
+    float angle_KI[3] = {0,0,0};
+
+    float angle_IE[3] = {0,0,0};
+
+    float desired_roll;
+    float desired_pitch;
+    float desired_yaw;
+    float roll_error;
+    float pitch_error;
+    float max_angle = 10;
+
+
+
+
 public:
     float* thr_pwm;
     float* roll_pwm;
@@ -64,9 +80,13 @@ public:
     float c_delm0;
     float c_delm1;
     float c_delm2;
-    float integral_error[3] = {0,0,0};
-    float dt = 0.02;
+    float rate_integral_error[3] = {0,0,0};
+    float angle_integral_error[3] = {0,0,0};
+    float rate_dt = 0.01;
+    float angle_dt = 0.01;
     void controller_loop(int value);
+    void rate_controller_loop();
+    void angle_controller_loop();
     void print();
     void mixer();
 };

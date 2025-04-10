@@ -31,6 +31,7 @@
 
 Sensors::Sensors()
 {
+
   for(uint8_t i = 0; i < 3; i++)
   {
     this->data.gyr[i]   = 0;
@@ -149,22 +150,22 @@ void Sensors::update()
 void Sensors::print()
 {
  // /*
-//   Serial.print(this->data.gyr[0]);// roll rate
-//   Serial.print(",");
+  Serial.print(this->data.gyr[0]);// roll rate
+  Serial.print("\n");
 //   Serial.print(this->data.gyr[1]);// pitch rate
 //   Serial.print(",");
 //   Serial.print(this->data.gyr[2]);// yaw rate
 //   Serial.print(",");
 //  // */
 
-  Serial.print(this->data.quat[0]);// 
-  Serial.print(",");
-  Serial.print(this->data.quat[1]);// 
-  Serial.print(",");
-  Serial.print(this->data.quat[2]);// 
-  Serial.print(",");
-  Serial.print(this->data.quat[3]);// 
-  Serial.print(",\n");
+  // Serial.print(this->data.quat[0]);// 
+  // Serial.print(",");
+  // Serial.print(this->data.quat[1]);// 
+  // Serial.print(",");
+  // Serial.print(this->data.quat[2]);// 
+  // Serial.print(",");
+  // Serial.print(this->data.quat[3]);// 
+  // Serial.print(",\n");
   
  // /*
   // Serial.print(this->data.acc[0]); // x acc 

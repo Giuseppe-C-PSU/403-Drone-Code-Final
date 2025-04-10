@@ -35,6 +35,8 @@
 #define NUM_CALIBRATION 500
 #define LOWPASS_WEIGHT 0.1
 
+
+
 struct sens_t
 {
   float gyr[3];
