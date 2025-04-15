@@ -15,6 +15,11 @@ const float DEG2RAD_TERM = 3.1415926535897932384626433832795028841/180;
 extern RC_PILOT rc;
 extern Sensors sens;
 
+struct obDatalink_ref* ob = &obDatalink;
+struct datalinkMessageHITLSim2Onboard_ref* s2o = ob->sim2onboard;
+
+
+// Prelim Functions
 float Controller::applyDeadband(float value, float deadband) {
     if (fabs(value) < deadband) {
         return 0.0;
@@ -42,128 +47,54 @@ float mapStickToRate(float stick_value, float stick_min, float stick_mid, float 
     return rate;
 }
 
-
-
-struct obDatalink_ref* ob = &obDatalink;
-struct datalinkMessageHITLSim2Onboard_ref* s2o = ob->sim2onboard;
-
-void Controller::controller_loop(int value){
-    if(value == 1){
-        have_rc_in_pace = 1;
-    }else{
-        have_rc_in_pace = 0;
+// Controller
+void Controller::controller_loop(bool value){
+    if(value){
+        angle_p[0] = s2o->k_p_x;
+        angle_p[1] = s2o->k_p_y;
+        angle_i[0] = s2o->k_i_x;
+        angle_i[1] = s2o->k_i_y;
+        angle_d[0] = s2o->k_d_x;
+        angle_d[1] = s2o->k_d_y;
     }
 
     //Reciever Code:
     c_delf = applyDeadband((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0), DEAD_BAND);
-    // c_delm0 = applyDeadband((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0), DEAD_BAND );
-    // c_delm1 = applyDeadband((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0), DEAD_BAND );
     c_delm2 = applyDeadband((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0), DEAD_BAND) * 0.2;
-
-    //rate_controller_loop();
+    
     angle_controller_loop();
     mixer();
 }
 
 void Controller::angle_controller_loop(){
-    float desired_roll = DEG2RAD_TERM * mapStickToAngle(rc.rc_in.ROLL, rc.rc_in.ROLL_MIN, rc.rc_in.ROLL_MID, rc.rc_in.ROLL_MAX, max_angle);
-    float desired_pitch = DEG2RAD_TERM * mapStickToAngle(rc.rc_in.PITCH, rc.rc_in.PITCH_MIN, rc.rc_in.PITCH_MID, rc.rc_in.PITCH_MAX, max_angle);
-    // desired_roll = c_delm0;
-    // desired_pitch = c_delm1;
+    angle_des[0] = DEG2RAD_TERM * mapStickToAngle(rc.rc_in.ROLL, rc.rc_in.ROLL_MIN, rc.rc_in.ROLL_MID, rc.rc_in.ROLL_MAX, max_angle);
+    angle_des[1] = DEG2RAD_TERM * mapStickToAngle(rc.rc_in.PITCH, rc.rc_in.PITCH_MIN, rc.rc_in.PITCH_MID, rc.rc_in.PITCH_MAX, max_angle);
 
-    if(rc.rc_in.AUX2 > 1500){
-        //Calculate error integrals
-        angle_integral_error[0] += roll_error * angle_dt;
-        angle_integral_error[1] += pitch_error * angle_dt;
-    }else{
-        angle_integral_error[0] = 0;
-        angle_integral_error[1] = 0;
-    }
+    for(int i = 0; i < 2; i++){
+        // Calculate errors
+        angle_err[i] = angle_des[i] - (sens.data.euler[i] * DEG2RAD_TERM);
 
-    roll_error = desired_roll - (sens.data.euler[0] * DEG2RAD_TERM);
-    pitch_error = desired_pitch - (sens.data.euler[1] * DEG2RAD_TERM);
-
-    
-
-    // P Controller:
-    float desired_angle_roll = (s2o->k_p_x * roll_error);
-    float desired_angle_pitch = (s2o->k_p_y * pitch_error);
-
-    // I Controller:
-    desired_angle_roll += (s2o->k_i_x * angle_integral_error[0]);
-    desired_angle_pitch += (s2o->k_i_y * angle_integral_error[1]);
-
-    // D Controller:
-    desired_angle_roll += s2o->k_d_x * (sens.data.gyr[0] * DEG2RAD_TERM);
-    desired_angle_pitch += s2o->k_d_y * (sens.data.gyr[1] * DEG2RAD_TERM);
-
-    // Add to c_delf:
-    c_delm0 = desired_angle_roll;
-    c_delm1 = desired_angle_pitch;
-
-}
-
-void Controller::rate_controller_loop() {
-
-    
-    if (have_rc_in_pace == 1)
-    {
-
-        //Integral Error:
+        // Calculate Integrals
         if(rc.rc_in.AUX2 > 1500){
-            for(int i = 0; i < 3; i++)
-            {
-            rate_integral_error[i] += (sens.data.euler[i] * DEG2RAD_TERM )* rate_dt;
-            }
+            angle_int_err[i] += angle_err[i] * angle_dt;
         }else{
-            for(int i = 0; i < 3; i++)
-            {
-            rate_integral_error[i] = 0;
-            }
+            angle_int_err[i] = 0;
         }
 
-        float roll_des = mapStickToRate(c_delm0,rc.rc_in.ROLL_MIN,rc.rc_in.ROLL_MID,rc.rc_in.ROLL_MAX,15);
-        float pitch_des = mapStickToRate(c_delm1,rc.rc_in.PITCH_MIN,rc.rc_in.PITCH_MID,rc.rc_in.PITCH_MAX,15);
-        float yaw_des = mapStickToRate(c_delm2,rc.rc_in.YAW_MIN,rc.rc_in.YAW_MID,rc.rc_in.YAW_MAX,15);
+        // P Controller
+        angle_con[i] = (angle_p[i] * angle_err[i]);
 
-
-        if(sens.data.gyr[0] > 70){
-            sens.data.gyr[0] = 70;
-        }else if(sens.data.gyr[0] < -70){
-            sens.data.gyr[0] = -70;
-        }
-
-        float roll_err = roll_des - sens.data.gyr[0];
-        float pitch_err = pitch_des - sens.data.gyr[1];
-        float yaw_err = yaw_des - sens.data.gyr[2];
-
-        // P-Gain:
-        c_delf  = c_delf;
-        c_delm0 = (roll_err * DEG2RAD_TERM) * s2o->k_p_x;
-        c_delm1 = c_delm1 + ( sens.data.euler[1] * DEG2RAD_TERM ) * s2o->k_p_y;
-        c_delm2 = c_delm2;
-
-        // I-Gain:
-        c_delf = c_delf;
-        c_delm0 = c_delm0 - s2o->k_i_x * rate_integral_error[0];
-        c_delm1 = c_delm1 + s2o->k_i_y * rate_integral_error[1];
-        c_delm2 = c_delm2;
-
-        // D_Gain:
-        c_delf = c_delf;
-        c_delm0 = c_delm0 - s2o->k_d_x * ( sens.data.gyr[0] * DEG2RAD_TERM );
-        c_delm1 = c_delm1 + s2o->k_d_y * ( sens.data.gyr[1] * DEG2RAD_TERM );
-        c_delm2 = c_delm2;
-
-
-    }else{
-        c_delf  = ( applyDeadband((rc.rc_in.THR - rc.rc_in.THR_MID) / (rc.rc_in.THR_MAX / 4.0), DEAD_BAND) );
-        c_delm0 = ( applyDeadband((rc.rc_in.ROLL - rc.rc_in.ROLL_MID) / (rc.rc_in.ROLL_MAX / 4.0), DEAD_BAND ) * 0.02 - ( s2o->nav_phi ) * KP[0] ) - KD[0] * ( s2o->nav_w_x );
-        c_delm1 = ( applyDeadband((rc.rc_in.PITCH - rc.rc_in.PITCH_MID) / (rc.rc_in.PITCH_MAX / 4.0), DEAD_BAND ) * 0.02 + ( s2o->nav_theta  ) * KP[1] ) + KD[1] * ( s2o->nav_w_y );
-        c_delm2 = ( applyDeadband((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX /    4.0), DEAD_BAND) );
+        // I Controller
+        angle_con[i] += (angle_i[i] * angle_int_err[i]);
+    
+        // D Controller
+        angle_con[i] += angle_d[i] * (-1.0 * sens.data.gyr[i] * DEG2RAD_TERM);
     }
-}
 
+    // Add to c_delm
+    c_delm0 = angle_con[0];
+    c_delm1 = angle_con[1];
+}
 
 
 void Controller::mixer(){
@@ -198,14 +129,23 @@ void Controller::print(){
     // Serial.print(rc.rc_in.YAW); 
     // Serial.print("\n");
 
-    Serial.print(c_delf);
+    Serial.print(angle_des[1]);
     Serial.print(", ");
-    Serial.print(c_delm0);
+    Serial.print(angle_err[1]);
     Serial.print(", ");
-    Serial.print(c_delm1);
+    Serial.print(angle_int_err[1]);
     Serial.print(", ");
-    Serial.print(c_delm2); 
+    Serial.print(angle_con[1]);
     Serial.println();
+
+    // Serial.print(c_delf);
+    // Serial.print(", ");
+    // Serial.print(c_delm0);
+    // Serial.print(", ");
+    // Serial.print(c_delm1);
+    // Serial.print(", ");
+    // Serial.print(c_delm2); 
+    // Serial.println();
 
     // Serial.print(*thr_pwm);
     // Serial.print(", ");

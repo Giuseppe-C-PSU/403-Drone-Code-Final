@@ -1,6 +1,5 @@
 #include <Arduino.h>
 
-
 #include "rc_pilot_reading.h"
 #include "motors.h"
 #include "rc_pilot.h"
@@ -9,33 +8,7 @@
 #include "datalink.h"
 #include "EKF.h"
 #include "sensors.h"
-
-
-
-#define HAVE_DATALINK     1
-#define HAVE_IMU          1
-#define HAVE_RC_RECEIVER  1
-#define HAVE_MOTORS       1
-#define HAVE_THERMAL      0
-#define HAVE_PRINTS       0
-#define HAVE_EKF          0
-#define USE_RC_IN_PACE    1
-
-const unsigned long intervalIMU = 10;
-const unsigned long intervalRC = 10;
-const unsigned long intervalMotors = 10;
-const unsigned long intervalDatalink = 20;
-const unsigned long intervalThermal = 200;
-const unsigned long intervalEKF = 10;
-
-unsigned long previousMillisIMU = 0;
-unsigned long previousMillisRC = 0;
-unsigned long previousMillisMotors = 0;
-unsigned long previousMillisDatalink = 0;
-unsigned long previousMillisThermal = 0;
-unsigned long previousMillisEKF = 0;
-
-float dt = 0.01;
+#include "main.h"
 
 Motors motors;
 extern RC_PILOT rc;
@@ -44,13 +17,6 @@ Dlink datalink;
 wifi ether;
 EKF ekf;
 extern Sensors sens;
-
-unsigned long previousMillis = 0;
-const long interval = 500;
-
-
-uint16_t pwm[4] = {MIN_PWM_OUT,MIN_PWM_OUT,MIN_PWM_OUT,MIN_PWM_OUT};
-uint16_t MotorDataGCS[4] = {MIN_PWM_OUT,MIN_PWM_OUT,MIN_PWM_OUT,MIN_PWM_OUT};
 
 void setup()
 {
@@ -84,7 +50,6 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
 
 }
-
 
 void loop()
 {
@@ -142,10 +107,10 @@ void loop()
   if (currentMillis - previousMillisMotors >= intervalMotors) {
     previousMillisMotors = currentMillis;
     
-    #if USE_RC_IN_PACE
-      cntrl.controller_loop(1);
+    #if DATALINK
+      cntrl.controller_loop(true);
     #else
-      cntrl.controller_loop(0);
+      cntrl.controller_loop(false);
     #endif
     motors.update(pwm);
   }
@@ -192,8 +157,8 @@ void loop()
   #if HAVE_PRINTS
     // rc.print();
     // ekf.printState();
-    // cntrl.print();
-    sens.print();
+    cntrl.print();
+    // sens.print();
   #endif
   
 

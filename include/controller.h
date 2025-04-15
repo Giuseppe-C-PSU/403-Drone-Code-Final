@@ -24,8 +24,6 @@ private:
     float KD[3] = {0.1, 0.1, 0.1};
     float KP[3] = {0.05, 0.05, 0.5};
     float KI[3] = {0.01, 0.01, 0.01};
-
-   
     
 
     // ~~~~~~~~~~~~~~~~ CONTROLLERS ~~~~~~~~~~~~~~~~~~~
@@ -51,21 +49,15 @@ private:
     }
 
     // Angle controller vars
-    float angle_KP[3] = {0,0,0};
-    float angle_KD[3] = {0,0,0};
-    float angle_KI[3] = {0,0,0};
-
-    float angle_IE[3] = {0,0,0};
-
-    float desired_roll;
-    float desired_pitch;
-    float desired_yaw;
-    float roll_error;
-    float pitch_error;
-    float max_angle = 10;
-
-
-
+    float angle_des[2] = {0,0}; // Desired angle from controller
+    float angle_err[2] = {0,0}; // Difference between true angle and desired angle
+    float angle_int_err[2] = {0,0}; // Integral term of the error of the angle
+    float angle_p[2] = {1.0,-1.0}; // Angle proportional gain 
+    float angle_i[2] = {0,0}; // Angle integral gain
+    float angle_d[2] = {0,0}; // Angle derivative gain
+    float angle_con[2] = {0,0}; // Angle controller 
+    float max_angle = 10; // Largest angle possible from controller
+    float angle_dt = 0.01; // Time step for integral error
 
 public:
     float* thr_pwm;
@@ -80,12 +72,7 @@ public:
     float c_delm0;
     float c_delm1;
     float c_delm2;
-    float rate_integral_error[3] = {0,0,0};
-    float angle_integral_error[3] = {0,0,0};
-    float rate_dt = 0.01;
-    float angle_dt = 0.01;
-    void controller_loop(int value);
-    void rate_controller_loop();
+    void controller_loop(bool value);
     void angle_controller_loop();
     void print();
     void mixer();
