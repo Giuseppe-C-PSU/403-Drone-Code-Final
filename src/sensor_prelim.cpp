@@ -1,10 +1,12 @@
 #include "sensors.h"
 #include "sensor_prelim.h"
 #include "Arduino.h"
+#include "thermal.h"
 // #include "Adafruit_MLX90640.h>
 
 
 Sensors sens;
+Thermal therm;
 
 void pozyx_setup(){
     sens.init();
@@ -19,6 +21,15 @@ void pozyx_loop(){
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     sens.update();
     // sens.print(); // should be commented out for flight
+}
+
+void thermal_setup(){
+    therm.is_connected();
+    therm.init();
+}
+
+void thermal_loop(){
+    therm.update();
 }
 
 

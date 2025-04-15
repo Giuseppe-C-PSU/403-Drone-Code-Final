@@ -70,26 +70,30 @@ void Controller::angle_controller_loop(){
     angle_des[0] = DEG2RAD_TERM * mapStickToAngle(rc.rc_in.ROLL, rc.rc_in.ROLL_MIN, rc.rc_in.ROLL_MID, rc.rc_in.ROLL_MAX, max_angle);
     angle_des[1] = DEG2RAD_TERM * mapStickToAngle(rc.rc_in.PITCH, rc.rc_in.PITCH_MIN, rc.rc_in.PITCH_MID, rc.rc_in.PITCH_MAX, max_angle);
 
-    for(int i = 0; i < 2; i++){
         // Calculate errors
-        angle_err[i] = angle_des[i] - (sens.data.euler[i] * DEG2RAD_TERM);
+    angle_err[0] = angle_des[0] - (sens.data.euler[0] * DEG2RAD_TERM);
+    angle_err[1] = angle_des[1] - (sens.data.euler[1] * DEG2RAD_TERM);
 
-        // Calculate Integrals
-        if(rc.rc_in.AUX2 > 1500){
-            angle_int_err[i] += angle_err[i] * angle_dt;
-        }else{
-            angle_int_err[i] = 0;
-        }
-
-        // P Controller
-        angle_con[i] = (angle_p[i] * angle_err[i]);
-
-        // I Controller
-        angle_con[i] += (angle_i[i] * angle_int_err[i]);
-    
-        // D Controller
-        angle_con[i] += angle_d[i] * (-1.0 * sens.data.gyr[i] * DEG2RAD_TERM);
+    // Calculate Integrals
+    if(rc.rc_in.AUX2 > 1500){
+        angle_int_err[0] += angle_err[0] * angle_dt;
+        angle_int_err[1] += angle_err[1] * angle_dt;
+    }else{
+        angle_int_err[0] = 0;
+        angle_int_err[1] = 0;
     }
+
+    // P Controller
+    angle_con[0] = (angle_p[0] * angle_err[0]);
+    angle_con[1] = -(angle_p[1] * angle_err[1]);
+
+    // I Controller
+    angle_con[0] += (angle_i[0] * angle_int_err[0]);
+    angle_con[1] -= (angle_i[1] * angle_int_err[1]);
+
+    // D Controller
+    angle_con[0] -= angle_d[0] * (sens.data.gyr[0] * DEG2RAD_TERM);
+    angle_con[1] += angle_d[1] * (sens.data.gyr[1] * DEG2RAD_TERM);
 
     // Add to c_delm
     c_delm0 = angle_con[0];
@@ -129,6 +133,14 @@ void Controller::print(){
     // Serial.print(rc.rc_in.YAW); 
     // Serial.print("\n");
 
+    Serial.print(angle_des[0]);
+    Serial.print(", ");
+    Serial.print(angle_err[0]);
+    Serial.print(", ");
+    Serial.print(angle_int_err[0]);
+    Serial.print(", ");
+    Serial.print(angle_con[0]);
+    Serial.print("\t");
     Serial.print(angle_des[1]);
     Serial.print(", ");
     Serial.print(angle_err[1]);

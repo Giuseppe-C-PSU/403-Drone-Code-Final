@@ -9,6 +9,7 @@
 #include "EKF.h"
 #include "sensors.h"
 #include "main.h"
+#include "thermal.h"
 
 Motors motors;
 extern RC_PILOT rc;
@@ -17,6 +18,7 @@ Dlink datalink;
 wifi ether;
 EKF ekf;
 extern Sensors sens;
+extern Thermal therm;
 
 void setup()
 {
@@ -159,6 +161,7 @@ void loop()
     // ekf.printState();
     cntrl.print();
     // sens.print();
+    // therm.print();
   #endif
   
 
