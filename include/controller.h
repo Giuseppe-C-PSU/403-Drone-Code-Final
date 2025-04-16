@@ -59,6 +59,17 @@ private:
     float max_angle = 10; // Largest angle possible from controller
     float angle_dt = 0.01; // Time step for integral error
 
+    // Rate controller vars
+    float rate_des[3] = {0,0,0}; // Desired rate from the Angle Controller (or the mapping for YAW)
+    float rate_err[3] = {0,0,0}; // Difference between true rate and desired rate
+    float rate_int_err[3] = {0,0,0}; // Integral term of the error of the rate
+    float rate_p[3] = {0,0,0}; // Rate proportional gain
+    float rate_i[3] = {0,0,0}; // Rate integral gain
+    float rate_d[3] = {0,0,0}; // Rate derivative gain
+    float rate_con[3] = {0,0,0}; // Rate controller
+    float max_rate = 15; // Largest possible angular rate from controller
+    float rate_dt = 0.01; // Time step for integral error
+
 public:
     float* thr_pwm;
     float* roll_pwm;
@@ -72,8 +83,10 @@ public:
     float c_delm0;
     float c_delm1;
     float c_delm2;
+    bool angle2rate = 0; // Change this rate to 1 to use the angle output as the rate input
     void controller_loop(bool value);
     void angle_controller_loop();
+    void rate_controller_loop();
     void print();
     void mixer();
 };

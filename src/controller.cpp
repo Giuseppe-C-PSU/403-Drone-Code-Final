@@ -56,6 +56,16 @@ void Controller::controller_loop(bool value){
         angle_i[1] = s2o->k_i_y;
         angle_d[0] = s2o->k_d_x;
         angle_d[1] = s2o->k_d_y;
+        
+        rate_p[0] = 0;
+        rate_p[1] = 0;
+        rate_p[2] = 0;
+        rate_i[0] = 0;
+        rate_i[1] = 0;
+        rate_i[2] = 0;
+        rate_d[0] = 0;
+        rate_d[1] = 0;
+        rate_d[2] = 0;
     }
 
     //Reciever Code:
@@ -63,6 +73,7 @@ void Controller::controller_loop(bool value){
     c_delm2 = applyDeadband((rc.rc_in.YAW - rc.rc_in.YAW_MID) / (rc.rc_in.YAW_MAX / 4.0), DEAD_BAND) * 0.2;
     
     angle_controller_loop();
+    rate_controller_loop();
     mixer();
 }
 
@@ -95,11 +106,51 @@ void Controller::angle_controller_loop(){
     angle_con[0] -= angle_d[0] * (sens.data.gyr[0] * DEG2RAD_TERM);
     angle_con[1] += angle_d[1] * (sens.data.gyr[1] * DEG2RAD_TERM);
 
-    // Add to c_delm
-    c_delm0 = angle_con[0];
-    c_delm1 = angle_con[1];
+    if(angle2rate){
+        // Add to rate controller
+        rate_des[0] = angle_con[0];
+        rate_des[1] = angle_con[1];
+    }else{
+        // Add to c_delm
+        c_delm0 = angle_con[0];
+        c_delm1 = angle_con[1];
+    }
 }
 
+void Controller::rate_controller_loop(){
+    rate_des[2] = DEG2RAD_TERM * mapStickToRate(rc.rc_in.YAW, rc.rc_in.YAW_MIN, rc.rc_in.YAW_MID, rc.rc_in.YAW_MAX, max_rate);
+
+    rate_err[0] = rate_des[0] - sens.data.gyr[0];
+    rate_err[1] = rate_des[0] - sens.data.gyr[0];
+
+    if(rc.rc_in.AUX2 > 1500){
+        rate_int_err[0] += rate_err[0] * rate_dt;
+        rate_int_err[1] += rate_err[1] * rate_dt;
+    }else{
+        rate_int_err[0] = 0;
+        rate_int_err[1] = 0;
+    }
+
+    // P Controller
+    rate_con[0] = rate_p[0] * rate_err[0];
+    rate_con[1] = rate_p[1] * rate_err[1];
+
+    // I Controller
+    rate_con[0] += rate_i[0] * rate_int_err[0];
+    rate_con[1] += rate_i[1] * rate_int_err[1];
+
+    // D Controller
+    rate_con[0] -= rate_d[0] * sens.data.gyr[0];
+    rate_con[1] -= rate_d[1] * sens.data.gyr[1];
+    
+    if(angle2rate){
+        c_delm0 = rate_con[0];
+        c_delm1 = rate_con[1];
+    }else{
+        c_delm0 = c_delm0;
+        c_delm1 = c_delm1;
+    }
+}
 
 void Controller::mixer(){
     if(thr_pwm == nullptr) 
