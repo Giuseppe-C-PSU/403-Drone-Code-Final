@@ -52,9 +52,9 @@ private:
     float angle_des[2] = {0,0}; // Desired angle from controller
     float angle_err[2] = {0,0}; // Difference between true angle and desired angle
     float angle_int_err[2] = {0,0}; // Integral term of the error of the angle
-    float angle_p[2] = {0.02,0.02}; // Angle proportional gain (Base 0.01) (Faster : 0.02)
-    float angle_i[2] = {0.02,0.02}; // Angle integral gain (Base 0.01) (Faster : 0.02)
-    float angle_d[2] = {0.0104,0.0104}; // Angle derivative gain (Base 0.0013) (Faster : 0.0104)
+    float angle_p[2] = {0.02,0.018}; // Angle proportional gain (Base 0.01,0.01) (Faster : 0.02)
+    float angle_i[2] = {0.02,0.01}; // Angle integral gain (Base 0.01,0.01) (Faster : 0.02)
+    float angle_d[2] = {0.0104,0.01535}; // Angle derivative gain (Base 0.0013,0.005) (Faster : 0.0104)
     float angle_con[2] = {0,0}; // Angle controller 
     float max_angle = 10; // Largest angle possible from controller
     float angle_dt = 0.01; // Time step for integral error
