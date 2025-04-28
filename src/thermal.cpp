@@ -18,6 +18,7 @@
  ***/
 
 #include "../include/thermal.h"
+#include "sensor_prelim.h"
 
 uint16_t mlx90640Frame[834];
 
@@ -35,8 +36,8 @@ void Thermal::init(){
     delay(100);
     if (this->is_connected() == false)
     {
-      Serial.println("MLX90640 not detected at default I2C address. Please check wiring. Freezing.");
-      while (1);
+    Serial.println("MLX90640 not detected at default I2C address. Please check wiring. Freezing.");
+    while (1);
     }
     Serial.println("MLX90640 online!");
 }
@@ -54,6 +55,8 @@ void Thermal::update(){
 }
 
 void Thermal::print(){
+    float total = 0;
+    float avg = 0;
     for (int x = 0 ; x < 768 ; x++)
     {
         //Serial.print("Pixel ");
@@ -63,42 +66,29 @@ void Thermal::print(){
         if (x%24 == 0){
             Serial.println();
         }
-        // if(why < 40)
-        // { Serial.print("0");}
+        Serial.print(why);
+        Serial.print(", ");
+        total+=why;
+    
 
-        // if(why > 40 && why > 60)
-        // { Serial.print("@");} 
+        // char c = '&';
+        // if (why < 40) c = ' ';
+        // else if (why < 48) c = '.';
+        // else if (why < 56) c = '-';
+        // else if (why < 64) c = '*';
+        // else if (why < 72) c = '+';
+        // else if (why < 80) c = 'x';
+        // else if (why < 88) c = '%';
+        // else if (why < 96) c = '#';
+        // else if (why > 96) c = 'X';
+        // else if (why < 0) c = 'HS';
+        // Serial.print(c);
+        
+        // if(why>96)
+        // {
+        //     moveServo(90);
+        // }
        
-        // if(why > 60 && why > 80)
-        // { Serial.print("%");} 
-
-        // if(why > 80 && why > 100)
-        // { Serial.print("&");} 
-
-        // if(why > 100 && why > 120)
-        // { Serial.print("*");} 
-
-        // if(why > 120 && why > 140)
-        // { Serial.print("?");} 
-
-        // if(why > 140 && why > 160)
-        // { Serial.print("+");} 
-
-        // if(why > 160)
-        // { Serial.print("=");}
-
-        char c = '&';
-        if (why < 40) c = ' ';
-        else if (why < 48) c = '.';
-        else if (why < 56) c = '-';
-        else if (why < 64) c = '*';
-        else if (why < 72) c = '+';
-        else if (why < 80) c = 'x';
-        else if (why < 88) c = '%';
-        else if (why < 96) c = '#';
-        else if (why > 96) c = 'X';
-        else if (why < 0) c = 'HS';
-        Serial.print(c);
 
 
         
@@ -106,6 +96,25 @@ void Thermal::print(){
         // Serial.print(",");
     }
     Serial.println();
+    avg = total/768;
+    Serial.print("Average temp: ");
+    Serial.print(avg); 
+    Serial.println();
+
+    if(avg > 65) // change this number to whatevre would work for the thing
+    {
+        moveServo(90);
+        Serial.print("Servo at 90");
+        Serial.println();
+    }
+    else
+    {
+        moveServo(0);
+        Serial.print("Servo at 0");
+        Serial.println();
+    }
+        
+    
 }
 
 bool Thermal::is_connected()

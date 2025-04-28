@@ -5,10 +5,11 @@
 
 #define HAVE_DATALINK     0
 #define HAVE_IMU          1
-#define HAVE_RC_RECEIVER  1
-#define HAVE_MOTORS       1
-#define HAVE_THERMAL      0
-#define HAVE_PRINTS       1 // MUST BE ON FOR DRONE TO FLY WITH CONTROLLER (ROLL ONLY I THINK!?!?) :) (*Shrug*)
+#define HAVE_RC_RECEIVER  0
+#define HAVE_MOTORS       0
+#define HAVE_THERMAL      1
+#define HAVE_PRINTS       0 // MUST BE ON FOR DRONE TO FLY WITH CONTROLLER (ROLL ONLY I THINK!?!?) :) (*Shrug*)
+
 #define HAVE_EKF          0
 
 const unsigned long intervalIMU = 10;

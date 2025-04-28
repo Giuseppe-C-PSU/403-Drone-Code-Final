@@ -8,6 +8,11 @@ void pozyx_setup();
 void pozyx_loop();
 void thermal_setup();
 void thermal_loop();
+void euler2quat(float phi, float theta, float psi, float q[4] );
+
+void moveServo(int angle);
+
+
 
 
 #endif
