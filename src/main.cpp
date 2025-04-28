@@ -75,7 +75,7 @@ void loop()
   }
 
     #if HAVE_EKF
-      ekf.predict(dt);
+      //ekf.predict(10);
     #endif
 
   #endif 
@@ -132,18 +132,19 @@ void loop()
     if (currentMillis - previousMillisEKF >= intervalEKF)
     {
       previousMillisEKF = currentMillis;
-      struct obDatalink_ref* ob = &obDatalink;
-      struct datalinkMessageOptitrack_ref* mocap = ob->optitrack;
-      float z[MEAS_DIM] = {sens.data.quat[0],sens.data.quat[1],sens.data.quat[2],sens.data.quat[3],mocap->pos_x,mocap->pos_y,mocap->pos_z};
-      // Serial.print('z = ');
-      // Serial.print(z[0]);
-      // Serial.print(',');
-      // Serial.print(z[1]);
-      // Serial.print(',');
-      // Serial.print(z[2]);
-      // Serial.print(',');
-      // Serial.print(z[3]);
-      // Serial.println();
+      // sens.print();
+      // struct obDatalink_ref* ob = &obDatalink;
+      // struct datalinkMessageOptitrack_ref* mocap = ob->optitrack;
+      float z[MEAS_DIM] = {sens.data.quat[0],sens.data.quat[1],sens.data.quat[2],sens.data.quat[3], 0, 0, 0};//,mocap->pos_x,mocap->pos_y,mocap->pos_z};
+      Serial.print('z = ');
+      Serial.print(z[0]);
+      Serial.print(',');
+      Serial.print(z[1]);
+      Serial.print(',');
+      Serial.print(z[2]);
+      Serial.print(',');
+      Serial.print(z[3]);
+      Serial.println();
       
       // Serial.print(mocap->pos_x);
       // Serial.print(",\t");
@@ -152,14 +153,14 @@ void loop()
       // Serial.print(mocap->pos_z);
       // Serial.print("\n");
   
-      ekf.update(z);
+     // ekf.update(z);
     }
   #endif
 
   #if HAVE_PRINTS
     // rc.print();
     // ekf.printState();
-    cntrl.print();
+    // cntrl.print();
     // sens.print();
     // therm.print();
   #endif
