@@ -19,7 +19,9 @@
 
 #include "../include/thermal.h"
 #include "sensor_prelim.h"
+#include "navigation.h"
 
+extern nav nav;
 uint16_t mlx90640Frame[834];
 
 Thermal::Thermal(){
@@ -62,7 +64,7 @@ void Thermal::print(){
         //Serial.print("Pixel ");
         //Serial.print(x);
         //Serial.print(": ");
-       u_int16_t why = mlx90640Frame[x] - 65400;
+        u_int16_t why = mlx90640Frame[x] - 65400;
         if (x%24 == 0){
             Serial.println();
         }
@@ -88,7 +90,6 @@ void Thermal::print(){
         // {
         //     moveServo(90);
         // }
-       
 
 
         
@@ -102,6 +103,10 @@ void Thermal::print(){
     Serial.println();
 
     if(avg > 65) // change this number to whatevre would work for the thing
+    {
+        fireDetected = true;
+    }
+    else if (avg > 65 && deploySuppressant)
     {
         moveServo(90);
         Serial.print("Servo at 90");

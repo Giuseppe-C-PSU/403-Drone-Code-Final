@@ -8,16 +8,17 @@ private:
     float currentPos[3] = {0,0,0}; // Current position
     float tolerance = 0.1; // Tolerance for reaching the target
     float initialPos[3] = {0,0,0}; // Initial position
-    bool atTarget = false; // Flag to check if target is reached
-    bool atFire = false; // Flag to check if fire is reached
+    bool atTarget = false; // Flag to check  tif target is reached
+    bool fireAlreadyDetected = false; // Flago check if fire is already detected
     float delta_x;
     float delta_y;
     float delta_z;
     void initializeNavigation();
     void updatePosition();
     void setTarget(float targetPos[3]);
+    int waypointIndex = 0; // Index of the current waypoint
 
-    float waypoints[12][3] = {
+    float waypoints[13][3] = {
         // Grid is describes as such:
         /*
                 back wall
@@ -48,8 +49,9 @@ private:
         {10, 2, 5},  // Waypoint G
         {5, 2, 5},   // Waypoint H
         {0, 0, 5},   // Waypoint I 
-        {0, 0, 0},   // Waypoint 1 (Land)
-        {0, 0, 0}    // Waypoint X (Fire)
+        {0, 0, 5},   // Waypoint iota (Above fire)
+        {0, 0, 3},   // Waypoint X (Fire)
+        {0, 0, 0}    // Waypoint 1 (Land)
     };
 
 public:

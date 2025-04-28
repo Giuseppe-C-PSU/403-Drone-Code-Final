@@ -1,6 +1,9 @@
 // This is for the nagation for the drone itself
 #include "datalink.h"
 #include "navigation.h"
+#include "thermal.h"
+
+extern Thermal therm;
 
 struct datalinkMessageOptitrack_ref* mocap = &obDatalinkMessageOptitrack;
 
@@ -40,12 +43,39 @@ void nav::updatePosition() {
     Serial.print(", Delta Z: ");
     Serial.println(delta_z);
 
+    if(therm.fireDetected){
+        if(fireAlreadyDetected){
+            return; // Fire already detected, do nothing
+        } else {
+            waypoints[11][0] = currentPos[0];
+            waypoints[11][1] = currentPos[1];
+            waypoints[12][0] = currentPos[0];
+            waypoints[12][1] = currentPos[1];
+            setTarget(waypoints[12]);
+            Serial.println("Fire detected, setting target to waypoint iota.");
+            fireAlreadyDetected = true;
+        }
+        
+    }
+
+
 
     if (delta_x < tolerance && delta_y < tolerance && delta_z < tolerance) {
         // Target reached
         Serial.println("Target reached!");
         atTarget = true;
     } 
+
+    if (atTarget)
+    {
+        if(waypointIndex == 12){
+            therm.deploySuppressant = true; 
+        }
+        waypointIndex++;
+        setTarget(waypoints[waypointIndex]);
+        Serial.print("Moving to waypoint");
+    }
+    
 }
 
 

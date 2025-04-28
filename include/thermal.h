@@ -32,6 +32,8 @@ public:
   Thermal();
   ~Thermal();
 
+  bool fireDetected = false;
+  bool deploySuppressant = false;
   void init();
   void update();
   void print();
