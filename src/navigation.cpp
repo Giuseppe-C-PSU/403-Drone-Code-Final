@@ -19,12 +19,12 @@ void nav::setTarget(float targetPos[3]){
     this->targetPos[1] = targetPos[1];
     this->targetPos[2] = targetPos[2];
     atTarget = false; // Reset the target reached flag
-    Serial.print("Target set to: ");
-    Serial.print(targetPos[0]);
-    Serial.print(", ");
-    Serial.print(targetPos[1]);
-    Serial.print(", ");
-    Serial.println(targetPos[2]);
+    // Serial.print("Target set to: ");
+    // Serial.print(targetPos[0]);
+    // Serial.print(", ");
+    // Serial.print(targetPos[1]);
+    // Serial.print(", ");
+    // Serial.println(targetPos[2]);
 }
 
 void nav::updatePosition() {
@@ -36,12 +36,12 @@ void nav::updatePosition() {
     delta_y = abs(targetPos[1] - currentPos[1]);
     delta_z = abs(targetPos[2] - currentPos[2]);
     
-    Serial.print("Delta X: ");
-    Serial.print(delta_x);
-    Serial.print(", Delta Y: ");
-    Serial.print(delta_y);
-    Serial.print(", Delta Z: ");
-    Serial.println(delta_z);
+    // Serial.print("Delta X: ");
+    // Serial.print(delta_x);
+    // Serial.print(", Delta Y: ");
+    // Serial.print(delta_y);
+    // Serial.print(", Delta Z: ");
+    // Serial.println(delta_z);
 
     if(therm.fireDetected){
         if(fireAlreadyDetected){
@@ -52,7 +52,7 @@ void nav::updatePosition() {
             waypoints[12][0] = currentPos[0];
             waypoints[12][1] = currentPos[1];
             setTarget(waypoints[12]);
-            Serial.println("Fire detected, setting target to waypoint iota.");
+            // Serial.println("Fire detected, setting target to waypoint iota.");
             fireAlreadyDetected = true;
         }
         
@@ -62,7 +62,7 @@ void nav::updatePosition() {
 
     if (delta_x < tolerance && delta_y < tolerance && delta_z < tolerance) {
         // Target reached
-        Serial.println("Target reached!");
+        // Serial.println("Target reached!");
         atTarget = true;
     } 
 
@@ -73,7 +73,7 @@ void nav::updatePosition() {
         }
         waypointIndex++;
         setTarget(waypoints[waypointIndex]);
-        Serial.print("Moving to waypoint");
+        // Serial.print("Moving to waypoint");
     }
     
 }

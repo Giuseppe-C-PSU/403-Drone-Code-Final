@@ -49,6 +49,10 @@ void setup()
       thermal_setup();
     #endif
 
+    #if HAVE_NAVIGATION
+      nav.initializeNavigation();
+    #endif
+
     pinMode(LED_BUILTIN, OUTPUT);
 
 }
@@ -154,6 +158,13 @@ void loop()
       // Serial.print("\n");
   
      // ekf.update(z);
+    }
+  #endif
+
+  #if HAVE_NAVIGATION
+    if (currentMillis - previousMillisNavigation >= intervalNavigation) {
+      previousMillisNavigation = currentMillis;
+      nav.updatePosition();
     }
   #endif
 
