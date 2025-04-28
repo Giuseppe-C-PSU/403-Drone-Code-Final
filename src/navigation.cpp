@@ -7,17 +7,22 @@ extern Thermal therm;
 
 struct datalinkMessageOptitrack_ref* mocap = &obDatalinkMessageOptitrack;
 
-void nav::initializeNavigation(){
+void Nav::initializeNavigation(){
     // Initialize navigation parameters
-    initialPos[0] = mocap->pos_x;
-    initialPos[1] = mocap->pos_y;
-    initialPos[2] = mocap->pos_z; 
+    initialPos[0] = mocap->pos_x * 3.3;
+    initialPos[1] = mocap->pos_y * 3.3;
+    initialPos[2] = mocap->pos_z * 3.3; 
+    waypoints[12][0] = initialPos[0];
+    waypoints[12][1] = initialPos[1];
+    waypoints[13][0] = initialPos[0];
+    waypoints[13][1] = initialPos[1];
+    setTarget(waypoints[0]);
 }
 
-void nav::setTarget(float targetPos[3]){
-    this->targetPos[0] = targetPos[0];
-    this->targetPos[1] = targetPos[1];
-    this->targetPos[2] = targetPos[2];
+void Nav::setTarget(float targetPos[3]){
+    this->targetPos[0] = targetPos[0] - initialPos[0];
+    this->targetPos[1] = targetPos[1] - initialPos[1];
+    this->targetPos[2] = targetPos[2] - initialPos[2];
     atTarget = false; // Reset the target reached flag
     // Serial.print("Target set to: ");
     // Serial.print(targetPos[0]);
@@ -27,14 +32,14 @@ void nav::setTarget(float targetPos[3]){
     // Serial.println(targetPos[2]);
 }
 
-void nav::updatePosition() {
-    currentPos[0] = mocap->pos_x;
-    currentPos[1] = mocap->pos_y;
-    currentPos[2] = mocap->pos_z;
+void Nav::updatePosition() {
+    currentPos[0] = mocap->pos_x * 3.3;
+    currentPos[1] = mocap->pos_y * 3.3;
+    currentPos[2] = mocap->pos_z * 3.3;
 
-    delta_x = abs(targetPos[0] - currentPos[0]);
-    delta_y = abs(targetPos[1] - currentPos[1]);
-    delta_z = abs(targetPos[2] - currentPos[2]);
+    delta_x = targetPos[0] - currentPos[0];
+    delta_y = targetPos[1] - currentPos[1];
+    delta_z = targetPos[2] - currentPos[2];
     
     // Serial.print("Delta X: ");
     // Serial.print(delta_x);
@@ -47,11 +52,11 @@ void nav::updatePosition() {
         if(fireAlreadyDetected){
             return; // Fire already detected, do nothing
         } else {
+            waypoints[10][0] = currentPos[0];
+            waypoints[10][1] = currentPos[1];
             waypoints[11][0] = currentPos[0];
             waypoints[11][1] = currentPos[1];
-            waypoints[12][0] = currentPos[0];
-            waypoints[12][1] = currentPos[1];
-            setTarget(waypoints[12]);
+            setTarget(waypoints[11]);
             // Serial.println("Fire detected, setting target to waypoint iota.");
             fireAlreadyDetected = true;
         }
@@ -60,7 +65,7 @@ void nav::updatePosition() {
 
 
 
-    if (delta_x < tolerance && delta_y < tolerance && delta_z < tolerance) {
+    if (abs(delta_x) < tolerance && abs(delta_y) < tolerance && abs(delta_z) < tolerance) {
         // Target reached
         // Serial.println("Target reached!");
         atTarget = true;

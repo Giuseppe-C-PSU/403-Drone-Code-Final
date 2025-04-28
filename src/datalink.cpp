@@ -23,6 +23,9 @@
 #include "wifi.h"
 #include "rc_pilot.h"
 #include "EKF.h"
+#include "navigation.h"
+
+extern Nav nav;
 
 
 struct datalinkWork_ref obDatalinkWork = {
@@ -259,6 +262,9 @@ struct datalinkMessageHITLOnboard2Sim_ref obDatalinkMessageOnboard2Sim = {
   0 , /* float pos_y */
   0 , /* float pos_z */
   {0, 0, 0, 0}, /* float quaternions */
+  0, /* Delta X*/
+  0, /* Delta Y*/
+  0, /* Delta Z*/
 };
 
 struct datalinkMessageOptitrack_ref obDatalinkMessageOptitrack = {
@@ -711,9 +717,12 @@ void writeOnboard2Sim (WiFiUDP* wf, Controller* cntrl, EKF* ekf)
   data->onboard2sim->q[1] = ekf->x_corrected[1];
   data->onboard2sim->q[2] = ekf->x_corrected[2];
   data->onboard2sim->q[3] = ekf->x_corrected[3];
-  data->onboard2sim->pos_x = ekf->x_corrected[4];
-  data->onboard2sim->pos_y = ekf->x_corrected[5];
-  data->onboard2sim->pos_z = ekf->x_corrected[6];
+  data->onboard2sim->pos_x = obDatalinkMessageOptitrack.pos_x;
+  data->onboard2sim->pos_y = obDatalinkMessageOptitrack.pos_x;
+  data->onboard2sim->pos_z = obDatalinkMessageOptitrack.pos_x;
+  data->onboard2sim->delta_x = nav.delta_x;
+  data->onboard2sim->delta_y = nav.delta_y;
+  data->onboard2sim->delta_z = nav.delta_z;
 
 
 

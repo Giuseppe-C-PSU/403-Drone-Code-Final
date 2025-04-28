@@ -21,7 +21,7 @@
 #include "sensor_prelim.h"
 #include "navigation.h"
 
-extern nav nav;
+extern Nav nav;
 uint16_t mlx90640Frame[834];
 
 Thermal::Thermal(){
@@ -59,18 +59,23 @@ void Thermal::update(){
 void Thermal::print(){
     float total = 0;
     float avg = 0;
+    int count = 0;
     for (int x = 0 ; x < 768 ; x++)
     {
         //Serial.print("Pixel ");
         //Serial.print(x);
         //Serial.print(": ");
         u_int16_t why = mlx90640Frame[x] - 65400;
-        if (x%24 == 0){
-            Serial.println();
+        // if (x%32 == 0){
+        //     Serial.println();
+        // }
+        // Serial.print(why);
+        // Serial.print(", ");
+        // total+=why;
+        if(why > 100)
+        {
+            count++;
         }
-        Serial.print(why);
-        Serial.print(", ");
-        total+=why;
     
 
         // char c = '&';
@@ -96,27 +101,30 @@ void Thermal::print(){
         // Serial.print(why-65400);
         // Serial.print(",");
     }
-    Serial.println();
-    avg = total/768;
-    Serial.print("Average temp: ");
-    Serial.print(avg); 
-    Serial.println();
+    // Serial.println();
+    // avg = total/768;
+    // Serial.print("Average temp: ");
+    // Serial.print(count); 
+    // Serial.println();
 
-    if(avg > 65) // change this number to whatevre would work for the thing
+
+    if(count > 40) // change this number to whatevre would work for the thing
     {
         fireDetected = true;
+       // deploySuppressant = true;
     }
-    else if (avg > 65 && deploySuppressant)
+    if (count > 40) // change this number to whatevre would work for the thing
     {
         moveServo(90);
-        Serial.print("Servo at 90");
-        Serial.println();
+        // Serial.print("Servo at 90");
+        // Serial.println();
     }
+
     else
     {
         moveServo(0);
-        Serial.print("Servo at 0");
-        Serial.println();
+        // Serial.print("Servo at 0");
+        // Serial.println();
     }
         
     

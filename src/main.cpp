@@ -10,6 +10,7 @@
 #include "sensors.h"
 #include "main.h"
 #include "thermal.h"
+#include "navigation.h"
 
 Motors motors;
 extern RC_PILOT rc;
@@ -19,6 +20,7 @@ wifi ether;
 EKF ekf;
 extern Sensors sens;
 extern Thermal therm;
+Nav nav;
 
 void setup()
 {
@@ -162,10 +164,7 @@ void loop()
   #endif
 
   #if HAVE_NAVIGATION
-    if (currentMillis - previousMillisNavigation >= intervalNavigation) {
-      previousMillisNavigation = currentMillis;
-      nav.updatePosition();
-    }
+    nav.updatePosition();
   #endif
 
   #if HAVE_PRINTS

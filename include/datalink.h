@@ -293,6 +293,9 @@ struct datalinkMessageHITLOnboard2Sim_ref {
   float pos_y; /* */
   float pos_z; /* */
   float q[4];  /* */
+  float delta_x; /* */
+  float delta_y; /* */
+  float delta_z; /* */
 };
 
 struct datalinkMessageOptitrack_ref {
